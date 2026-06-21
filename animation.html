@@ -101,13 +101,37 @@ canvas{display:block;width:100vw;height:100vh;}
 /* Stars in splash */
 .splash-star{position:absolute;background:#fff;border-radius:50%;animation:tw var(--d) ease-in-out infinite;}
 @keyframes tw{0%,100%{opacity:.15;}50%{opacity:1;}}
+
+/* Splash photo */
+@keyframes splashFloat{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-12px) scale(1.03);}}
+#splash-photo-wrap{
+  position:relative;display:inline-block;
+  animation:splashFloat 3.5s ease-in-out infinite;
+}
+#splash-photo-wrap::before{
+  content:'';position:absolute;inset:-4px;border-radius:50%;
+  background:conic-gradient(#F5C518,#FF6B35,#00C9FF,#F5C518);
+  animation:spin 4s linear infinite;z-index:-1;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+#splash-photo-wrap::after{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  box-shadow:0 0 50px rgba(245,197,24,.55),0 0 100px rgba(245,197,24,.2);
+  z-index:-1;
+}
+#splash-photo{
+  width:130px;height:130px;border-radius:50%;
+  object-fit:cover;object-position:top;display:block;
+}
 </style>
 </head>
 <body>
 
 <!-- SPLASH -->
 <div id="splash">
-  <div class="ball">🏀</div>
+  <div id="splash-photo-wrap">
+    <img id="splash-photo" src="harel1.jpg" alt="הראל">
+  </div>
   <h1>יום בחיי הראל מגנזי</h1>
   <p>שחקן כדורסל — היום ובעתיד 🌟</p>
   <button id="play-btn" onclick="startAnimation()">▶ הפעל אנימציה</button>
@@ -143,6 +167,33 @@ function resize(){
 }
 window.addEventListener('resize', resize);
 resize();
+
+// Real photos
+const img1 = new Image(); img1.src = 'harel1.jpg';
+const img2 = new Image(); img2.src = 'harel2.jpg';
+
+// Draw a real photo in a rounded frame with golden glow
+function drawPhoto(img, x, y, w, h, alpha=1){
+  if(!img.complete || !img.naturalWidth) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // Glow
+  ctx.shadowColor = '#F5C518';
+  ctx.shadowBlur = 28;
+  // Clip to rounded rect and draw
+  ctx.beginPath(); rr(x,y,w,h,14); ctx.clip();
+  ctx.drawImage(img, x, y, w, h);
+  ctx.restore();
+  // Golden border (drawn on top, no clip)
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = '#F5C518';
+  ctx.lineWidth = 4;
+  ctx.shadowColor = '#F5C518';
+  ctx.shadowBlur = 18;
+  ctx.beginPath(); rr(x,y,w,h,14); ctx.stroke();
+  ctx.restore();
+}
 
 // Stars in splash
 (function(){
@@ -752,6 +803,26 @@ function renderTraining(t){
     ctx.beginPath(); ctx.arc(charX-24,H*0.79,3,0,TAU); ctx.fill();
   }
 
+  // Real photo of Harel (holding ball) appears during training
+  if(t > 0.38){
+    const photoAlpha = ease(clamp((t-0.38)/0.28,0,1));
+    const floatY = Math.sin(t*PI*2)*8;
+    const phW = Math.min(H*0.36,W*0.22), phH = phW*1.32;
+    drawPhoto(img1, W*0.03, H*0.32+floatY, phW, phH, photoAlpha);
+    // "Real Harel" label under photo
+    if(photoAlpha > 0.5){
+      ctx.save();
+      ctx.globalAlpha = photoAlpha;
+      ctx.fillStyle='rgba(0,0,0,0.55)';
+      ctx.beginPath(); rr(W*0.03,H*0.32+floatY+phH+6,phW,26,8); ctx.fill();
+      ctx.fillStyle='#F5C518';
+      ctx.font=`bold ${clamp(H*0.026,12,20)}px Heebo,Arial`;
+      ctx.textAlign='center';
+      ctx.fillText('הראל האמיתי 🏀',W*0.03+phW/2,H*0.32+floatY+phH+23);
+      ctx.restore();
+    }
+  }
+
   drawLabel('🏀 16:00 — אימון | אליצור נתניה',W*0.5,H*0.04,'#F5C518');
 }
 
@@ -825,7 +896,7 @@ function renderGame(t){
     drawBall(bx,by,16,t*PI*5);
   }
 
-  // GOOOAL text
+  // GOAL text + real photo of Harel (hands raised — perfect for celebration!)
   if(t>0.82){
     const alpha=ease((t-0.82)/0.18);
     ctx.save();
@@ -833,10 +904,14 @@ function renderGame(t){
     ctx.fillStyle='#FFD700';
     ctx.font=`bold ${H*0.1}px Heebo,Arial`;
     ctx.textAlign='center';
-    // Glow
     ctx.shadowColor='#FFD700'; ctx.shadowBlur=30;
-    ctx.fillText('🏀 נכנס!',W*0.5,H*0.4);
+    ctx.fillText('🏀 נכנס!',W*0.5,H*0.28);
     ctx.restore();
+
+    // Harel with hands raised — the real celebration photo
+    const floatY = Math.sin(t*PI*4)*10;
+    const phW = Math.min(H*0.42,W*0.26), phH = phW*1.33;
+    drawPhoto(img2, W*0.5-phW/2, H*0.38+floatY, phW, phH, alpha);
   }
 
   drawLabel('🏆 19:00 — משחק! | אליצור נתניה',W*0.5,H*0.03,'#F5C518');
@@ -910,14 +985,34 @@ function renderNBA(t){
 
   // Character in NBA white jersey
   const s=clamp(H/480,0.7,1.3);
-  const charX=lerp(W*0.15,W*0.6,ease(t));
+  const charX=lerp(W*0.15,W*0.55,ease(t));
   const pose=t<0.5?'run':(t<0.75?'jump_shoot':'celebrate');
   drawChar(charX,H*0.88,s,pose,t,'#fff','#002b5c');
 
   // Ball
   const ballBT=(t*5)%1;
   const ballY=lerp(H*0.82,H*0.65,Math.abs(Math.sin(ballBT*PI)));
-  drawBall(lerp(W*0.15,W*0.6,ease(t))+20,ballY,20,t*PI*6);
+  drawBall(lerp(W*0.15,W*0.55,ease(t))+20,ballY,20,t*PI*6);
+
+  // Real photo of Harel (hands raised = PERFECT for NBA dream!)
+  if(t > 0.32){
+    const photoAlpha = ease(clamp((t-0.32)/0.35,0,1));
+    const floatY = Math.sin(t*PI*1.8)*12;
+    const phW = Math.min(H*0.42,W*0.25), phH = phW*1.33;
+    drawPhoto(img2, W*0.72-phW/2, H*0.38+floatY, phW, phH, photoAlpha);
+    // "Future Harel" label
+    if(photoAlpha > 0.4){
+      ctx.save();
+      ctx.globalAlpha = photoAlpha;
+      ctx.fillStyle='rgba(0,0,0,0.6)';
+      ctx.beginPath(); rr(W*0.72-phW/2, H*0.38+floatY+phH+6, phW, 28, 8); ctx.fill();
+      ctx.fillStyle='#FF6B35';
+      ctx.font=`bold ${clamp(H*0.028,12,22)}px Heebo,Arial`;
+      ctx.textAlign='center';
+      ctx.fillText('הראל — עתיד NBA 🌟',W*0.72,H*0.38+floatY+phH+24);
+      ctx.restore();
+    }
+  }
 
   drawLabel('🌍 עתיד — הראל מגנזי ב-NBA!',W*0.5,H*0.03,'#ff6b35');
 }
@@ -968,9 +1063,21 @@ function renderVictory(t){
   ctx.fillText('🏆',0,-30);
   ctx.restore();
 
+  // Both real photos — grand finale side by side
+  if(t > 0.12){
+    const photoAlpha = ease(clamp((t-0.12)/0.3,0,1));
+    const phW = Math.min(H*0.3,W*0.18), phH = phW*1.33;
+    const floatL = Math.sin(t*PI*2.5)*9;
+    const floatR = Math.sin(t*PI*2.5+1.2)*9;
+    // Left photo (with ball)
+    drawPhoto(img1, W*0.04, H*0.44+floatL, phW, phH, photoAlpha);
+    // Right photo (hands raised)
+    drawPhoto(img2, W*0.78, H*0.38+floatR, phW, phH, photoAlpha);
+  }
+
   // Main character celebrating
   const s=clamp(H/480,0.7,1.4);
-  drawChar(W*0.35,H*0.88,s,'celebrate',t,'#003DA5','#F5C518');
+  drawChar(W*0.4,H*0.88,s,'celebrate',t,'#003DA5','#F5C518');
 
   // Big celebrate text
   const p=ease(clamp((t-0.2)/0.5,0,1));
