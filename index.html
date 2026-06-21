@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>הראל מגנזי 🏀 החלום שלי</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#003DA5;--gold:#F5C518;--orange:#FF6B35;
+  --bg:#0D1B2A;--slide-bg1:#0D1B2A;--accent:#00C9FF;
+}
+body{
+  font-family:'Heebo',sans-serif;background:var(--bg);
+  color:#fff;overflow:hidden;height:100vh;width:100vw;direction:rtl;
+  user-select:none;
+}
+
+/* ── CANVAS CONFETTI ── */
+#confetti-canvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
+
+/* ── PROGRESS BAR ── */
+#progress-bar{
+  position:fixed;top:0;left:0;height:5px;background:linear-gradient(90deg,var(--gold),var(--orange));
+  z-index:100;transition:width .5s ease;border-radius:0 3px 3px 0;
+}
+
+/* ── SLIDE COUNTER ── */
+#slide-counter{
+  position:fixed;bottom:20px;right:50%;transform:translateX(50%);
+  display:flex;gap:10px;z-index:100;
+}
+.dot{
+  width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.3);
+  cursor:pointer;transition:all .3s;
+}
+.dot.active{background:var(--gold);transform:scale(1.4);}
+
+/* ── NAV ARROWS ── */
+.nav-btn{
+  position:fixed;top:50%;transform:translateY(-50%);z-index:100;
+  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);
+  border-radius:50%;width:56px;height:56px;cursor:pointer;
+  font-size:24px;display:flex;align-items:center;justify-content:center;
+  transition:all .3s;backdrop-filter:blur(4px);
+}
+.nav-btn:hover{background:rgba(255,255,255,.3);transform:translateY(-50%) scale(1.1);}
+#btn-prev{left:16px;}
+#btn-next{right:16px;}
+
+/* ── SLIDES WRAPPER ── */
+#slides{position:relative;width:100vw;height:100vh;overflow:hidden;}
+.slide{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;
+  opacity:0;pointer-events:none;transition:opacity .5s,transform .5s;
+  transform:translateX(-60px);
+}
+.slide.active{opacity:1;pointer-events:all;transform:translateX(0);}
+.slide.out{opacity:0;transform:translateX(60px);}
+
+/* ── SLIDE BACKGROUNDS ── */
+#s0{background:linear-gradient(135deg,#0D1B2A 0%,#1a2f4e 100%);}
+#s1{background:linear-gradient(135deg,#003DA5 0%,#0a1628 100%);}
+#s2{background:linear-gradient(135deg,#1a0533 0%,#3d0066 100%);}
+#s3{background:linear-gradient(135deg,#0D1B2A 0%,#162030 100%);}
+#s4{background:linear-gradient(135deg,#003DA5 0%,#001f5c 100%);}
+#s5{background:linear-gradient(135deg,#1a0a00 0%,#4a1500 100%);}
+#s6{background:linear-gradient(135deg,#062210 0%,#0a3a1c 100%);}
+#s7{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);}
+
+/* ── TYPOGRAPHY ── */
+.slide-title{
+  font-size:clamp(2rem,6vw,4rem);font-weight:900;
+  text-align:center;line-height:1.2;margin-bottom:16px;
+}
+.slide-subtitle{
+  font-size:clamp(1.1rem,3vw,1.6rem);text-align:center;
+  opacity:.85;margin-bottom:24px;
+}
+.big-emoji{font-size:clamp(3rem,10vw,7rem);line-height:1.1;text-align:center;}
+.glow{text-shadow:0 0 20px currentColor;}
+
+/* ── BOUNCE BALL ── */
+@keyframes ballBounce{
+  0%,100%{transform:translateY(0) scaleX(1) scaleY(1);}
+  45%{transform:translateY(-120px) scaleX(1) scaleY(1);}
+  50%{transform:translateY(-130px) scaleX(1) scaleY(1);}
+  95%{transform:translateY(0) scaleX(1.15) scaleY(.85);}
+}
+@keyframes shadowPulse{
+  0%,100%{transform:scaleX(1);opacity:.5;}
+  50%{transform:scaleX(.6);opacity:.2;}
+}
+.bounce-wrap{position:relative;width:120px;height:160px;margin:0 auto;}
+.bounce-ball{
+  font-size:90px;position:absolute;top:0;left:50%;transform:translateX(-50%);
+  animation:ballBounce 1s ease-in-out infinite;cursor:pointer;
+}
+.bounce-shadow{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:70px;height:14px;background:rgba(0,0,0,.4);border-radius:50%;
+  animation:shadowPulse 1s ease-in-out infinite;
+}
+
+/* ── HERO PHOTO ── */
+.hero-photo{
+  width:200px;height:260px;object-fit:cover;object-position:top;
+  border-radius:24px;border:4px solid var(--gold);
+  box-shadow:0 0 40px rgba(245,197,24,.4);cursor:pointer;
+  transition:transform .3s;
+}
+.hero-photo:hover{transform:scale(1.04);}
+.photo-placeholder{
+  width:200px;height:260px;background:rgba(255,255,255,.1);
+  border-radius:24px;border:3px dashed rgba(255,255,255,.3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:50px;gap:8px;
+}
+.photo-placeholder span{font-size:13px;opacity:.6;}
+
+/* ── FACT CARDS ── */
+.facts-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}
+.fact-card{
+  background:rgba(255,255,255,.12);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.2);border-radius:16px;
+  padding:14px 20px;font-size:clamp(.95rem,2.5vw,1.2rem);
+  cursor:pointer;transition:all .3s;opacity:0;transform:translateY(20px);
+  min-width:140px;text-align:center;
+}
+.fact-card.revealed{opacity:1;transform:translateY(0);}
+.fact-card:hover{background:rgba(255,255,255,.2);transform:scale(1.05) translateY(0);}
+
+/* ── DREAM REVEAL ── */
+.dream-cover{
+  font-size:clamp(1.8rem,5vw,3rem);font-weight:900;
+  background:linear-gradient(90deg,var(--gold),var(--orange));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  cursor:pointer;border:3px solid rgba(245,197,24,.5);border-radius:20px;
+  padding:20px 40px;transition:all .3s;display:inline-block;text-align:center;
+}
+.dream-cover:hover{box-shadow:0 0 30px rgba(245,197,24,.5);transform:scale(1.03);}
+
+/* ── TIMELINE ── */
+.timeline{
+  display:flex;gap:0;overflow-x:auto;padding:16px 8px;
+  scrollbar-width:thin;scrollbar-color:var(--gold) transparent;
+  max-width:100vw;
+}
+.timeline-item{
+  min-width:130px;display:flex;flex-direction:column;align-items:center;
+  cursor:pointer;position:relative;
+}
+.timeline-item::before{
+  content:'';position:absolute;top:32px;right:50%;width:100%;height:3px;
+  background:rgba(255,255,255,.2);z-index:0;
+}
+.timeline-item:first-child::before{display:none;}
+.tl-dot{
+  width:64px;height:64px;border-radius:50%;
+  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+  position:relative;z-index:1;transition:all .3s;
+}
+.timeline-item:hover .tl-dot,.timeline-item.active .tl-dot{
+  background:var(--gold);border-color:var(--orange);transform:scale(1.15);
+}
+.tl-time{font-size:.85rem;font-weight:700;color:var(--gold);margin-top:8px;}
+.tl-label{font-size:.8rem;text-align:center;opacity:.8;padding:4px;}
+.tl-detail{
+  margin-top:20px;background:rgba(255,255,255,.1);border-radius:20px;
+  padding:20px 24px;min-height:80px;text-align:center;
+  font-size:clamp(1rem,2.5vw,1.3rem);border:1px solid rgba(255,255,255,.2);
+  max-width:500px;width:100%;transition:all .4s;
+}
+
+/* ── TEAM BADGE ── */
+.team-badge{
+  background:linear-gradient(135deg,var(--blue),#0055cc);
+  border:4px solid var(--gold);border-radius:50%;
+  width:140px;height:140px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:50px;
+  box-shadow:0 0 40px rgba(0,61,165,.8);cursor:pointer;
+  transition:all .3s;
+}
+.team-badge:hover{transform:rotate(5deg) scale(1.08);}
+
+/* ── STAT BARS ── */
+.stat-row{display:flex;align-items:center;gap:12px;margin:8px 0;width:100%;max-width:400px;}
+.stat-label{min-width:120px;font-size:.95rem;text-align:right;}
+.stat-bar-bg{flex:1;background:rgba(255,255,255,.15);border-radius:99px;height:18px;overflow:hidden;}
+.stat-bar-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--gold),var(--orange));
+  width:0%;transition:width 1.2s ease;
+}
+
+/* ── QUIZ ── */
+.quiz-box{width:100%;max-width:560px;}
+.q-text{
+  font-size:clamp(1.1rem,3vw,1.6rem);font-weight:700;
+  text-align:center;margin-bottom:20px;
+  background:rgba(255,255,255,.1);border-radius:16px;padding:16px;
+}
+.q-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.q-btn{
+  background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);
+  border-radius:14px;padding:14px 10px;font-size:clamp(.95rem,2.5vw,1.15rem);
+  font-family:'Heebo',sans-serif;color:#fff;cursor:pointer;
+  transition:all .25s;font-weight:700;
+}
+.q-btn:hover:not(:disabled){background:rgba(255,255,255,.25);transform:scale(1.04);}
+.q-btn.correct{background:#1a9e3f;border-color:#27c755;}
+.q-btn.wrong{background:#9e1a1a;border-color:#c72727;}
+.q-btn:disabled{cursor:default;}
+.score-badge{
+  font-size:clamp(1rem,2.5vw,1.3rem);font-weight:900;
+  background:rgba(245,197,24,.2);border:2px solid var(--gold);
+  border-radius:99px;padding:8px 24px;margin-bottom:16px;
+}
+#quiz-result{
+  font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;text-align:center;
+  padding:24px;display:none;
+}
+
+/* ── ADMIN PANEL ── */
+#admin-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
+  z-index:9000;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);
+}
+#admin-overlay.open{display:flex;}
+#admin-panel{
+  background:#1a2035;border:2px solid var(--gold);border-radius:24px;
+  padding:32px;max-width:640px;width:95%;max-height:90vh;overflow-y:auto;
+  direction:rtl;
+}
+#admin-panel h2{
+  font-size:1.8rem;font-weight:900;color:var(--gold);
+  margin-bottom:4px;text-align:center;
+}
+#admin-panel .admin-section{
+  background:rgba(255,255,255,.07);border-radius:16px;
+  padding:20px;margin-top:16px;
+}
+#admin-panel h3{font-size:1.1rem;font-weight:700;margin-bottom:12px;color:var(--accent);}
+.admin-input{
+  width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);
+  border-radius:10px;padding:10px 14px;color:#fff;font-family:'Heebo',sans-serif;
+  font-size:1rem;margin-bottom:8px;
+}
+.admin-input:focus{outline:none;border-color:var(--gold);}
+.admin-btn{
+  background:linear-gradient(90deg,var(--blue),var(--accent));border:none;
+  border-radius:10px;padding:10px 20px;color:#fff;font-family:'Heebo',sans-serif;
+  font-size:.95rem;font-weight:700;cursor:pointer;transition:all .25s;
+  margin:4px;
+}
+.admin-btn:hover{transform:scale(1.05);}
+.admin-btn.danger{background:linear-gradient(90deg,#8b0000,#c0392b);}
+.admin-list{list-style:none;margin-top:8px;}
+.admin-list li{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:8px 12px;background:rgba(255,255,255,.07);border-radius:8px;
+  margin-bottom:6px;font-size:.9rem;gap:8px;
+}
+.del-btn{
+  background:#c0392b;border:none;color:#fff;border-radius:6px;
+  padding:4px 10px;cursor:pointer;font-size:.85rem;
+}
+#admin-login{text-align:center;}
+#admin-login input{
+  background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);
+  border-radius:12px;padding:12px 18px;color:#fff;font-size:1.1rem;
+  margin-bottom:12px;width:220px;text-align:center;font-family:'Heebo',sans-serif;
+}
+#admin-login input:focus{outline:none;border-color:var(--gold);}
+.close-btn{
+  float:left;background:none;border:none;color:rgba(255,255,255,.6);
+  font-size:1.8rem;cursor:pointer;line-height:1;
+}
+.close-btn:hover{color:#fff;}
+
+/* ── PHOTO UPLOAD ── */
+.photo-upload-zone{
+  border:3px dashed rgba(245,197,24,.5);border-radius:16px;
+  padding:20px;text-align:center;cursor:pointer;transition:all .3s;
+  font-size:.95rem;color:rgba(255,255,255,.7);
+}
+.photo-upload-zone:hover{border-color:var(--gold);background:rgba(245,197,24,.05);}
+
+/* ── ADMIN TRIGGER ── */
+#admin-trigger{
+  position:fixed;top:12px;left:12px;width:40px;height:40px;
+  cursor:pointer;z-index:200;opacity:.01;border-radius:50%;
+}
+
+/* ── STARS BG ── */
+.stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
+.star{
+  position:absolute;background:#fff;border-radius:50%;
+  animation:twinkle var(--d) ease-in-out infinite;
+}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(1);}50%{opacity:1;transform:scale(1.4);}}
+
+/* ── SLIDE CONTENT WRAPPER ── */
+.slide-content{
+  position:relative;z-index:1;display:flex;flex-direction:column;
+  align-items:center;width:100%;max-width:720px;gap:12px;
+}
+
+/* ── CUSTOM CARDS (admin added) ── */
+.custom-card{
+  background:linear-gradient(135deg,rgba(245,197,24,.15),rgba(255,107,53,.15));
+  border:2px solid rgba(245,197,24,.4);border-radius:16px;
+  padding:14px 20px;font-size:1.1rem;text-align:center;
+  animation:fadeUp .5s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes popIn{from{opacity:0;transform:scale(.7);}to{opacity:1;transform:scale(1);}}
+@keyframes shimmer{
+  0%{background-position:200% center;}
+  100%{background-position:-200% center;}
+}
+.gradient-text{
+  background:linear-gradient(90deg,#F5C518,#FF6B35,#00C9FF,#F5C518);
+  background-size:300%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:shimmer 3s linear infinite;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:480px){
+  .q-options{grid-template-columns:1fr;}
+  .bounce-ball{font-size:70px;}
+  .hero-photo,.photo-placeholder{width:150px;height:195px;}
+  .timeline-item{min-width:100px;}
+}
+
+/* ── KEY HINT ── */
+#key-hint{
+  position:fixed;bottom:56px;right:50%;transform:translateX(50%);
+  font-size:.8rem;opacity:.4;pointer-events:none;
+}
+
+/* ── SLIDE 0 SPECIAL ── */
+#s0 .start-btn{
+  margin-top:20px;background:linear-gradient(90deg,var(--gold),var(--orange));
+  border:none;border-radius:99px;padding:16px 48px;
+  font-size:clamp(1.1rem,3vw,1.5rem);font-weight:900;font-family:'Heebo',sans-serif;
+  color:#0D1B2A;cursor:pointer;transition:all .3s;
+  box-shadow:0 8px 32px rgba(245,197,24,.4);
+}
+#s0 .start-btn:hover{transform:scale(1.07);box-shadow:0 12px 40px rgba(245,197,24,.6);}
+
+/* ── DENI SECTION ── */
+.deni-vs{
+  display:flex;align-items:center;gap:24px;justify-content:center;flex-wrap:wrap;
+}
+.player-card{
+  background:rgba(255,255,255,.08);border-radius:20px;
+  padding:24px 20px;text-align:center;min-width:160px;flex:1;max-width:220px;
+  border:2px solid rgba(255,255,255,.15);transition:all .3s;cursor:pointer;
+}
+.player-card:hover{border-color:var(--gold);transform:scale(1.04);}
+.player-card .p-emoji{font-size:50px;display:block;margin-bottom:8px;}
+.player-card .p-name{font-size:1rem;font-weight:900;color:var(--gold);}
+.player-card .p-stat{font-size:.85rem;opacity:.75;margin-top:4px;}
+.vs-badge{font-size:2rem;font-weight:900;color:var(--orange);}
+
+/* ── SECTION TITLE PILL ── */
+.pill{
+  background:rgba(245,197,24,.2);border:1px solid rgba(245,197,24,.5);
+  border-radius:99px;padding:4px 18px;font-size:.9rem;font-weight:700;
+  color:var(--gold);margin-bottom:4px;display:inline-block;
+}
+</style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<div id="progress-bar"></div>
+<div id="key-hint">← → מקשי החיצים לניווט</div>
+
+<!-- NAV -->
+<button class="nav-btn" id="btn-prev" onclick="navigate(-1)">‹</button>
+<button class="nav-btn" id="btn-next" onclick="navigate(1)">›</button>
+<div id="slide-counter"></div>
+
+<!-- ADMIN TRIGGER (hidden corner click) -->
+<div id="admin-trigger" onclick="adminTrigger()"></div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDES
+═══════════════════════════════════════════ -->
+<div id="slides">
+
+<!-- ── SLIDE 0: WELCOME ── -->
+<div class="slide active" id="s0">
+  <div class="stars" id="stars0"></div>
+  <div class="slide-content">
+    <div class="bounce-wrap" onclick="playBounceSound()">
+      <div class="bounce-ball">🏀</div>
+      <div class="bounce-shadow"></div>
+    </div>
+    <div class="slide-title" style="margin-top:12px">
+      <span class="gradient-text">הראל מגנזי</span>
+    </div>
+    <div class="slide-subtitle">מציג: <strong>החלום שלי</strong> 🌟</div>
+    <div style="font-size:1rem;opacity:.6;margin-bottom:4px;">מצגת לכיתה ג'</div>
+    <button class="start-btn" onclick="navigate(1)">▶ בואו נתחיל!</button>
+  </div>
+</div>
+
+<!-- ── SLIDE 1: WHO AM I ── -->
+<div class="slide" id="s1">
+  <div class="slide-content">
+    <div class="pill">🙋 מי אני?</div>
+    <div class="slide-title" style="color:var(--gold)">שלום! אני הראל 👋</div>
+    <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center;">
+      <div>
+        <img id="photo1" src="harel1.jpg" class="hero-photo" alt="הראל" onerror="this.style.display='none';document.getElementById('ph1').style.display='flex'">
+        <div id="ph1" class="photo-placeholder" style="display:none"><span>📸</span><span>תמונה תעלה בקרוב</span></div>
+      </div>
+      <div style="max-width:320px;">
+        <div class="facts-grid" id="about-facts">
+          <div class="fact-card" data-delay="0">👦 שם: הראל מגנזי</div>
+          <div class="fact-card" data-delay="150">🏫 כיתה: ג'</div>
+          <div class="fact-card" data-delay="300">🏀 ספורט: כדורסל</div>
+          <div class="fact-card" data-delay="450">🌟 חלום: שחקן מקצועי</div>
+          <div class="fact-card" data-delay="600">🎽 קבוצה: אליצור נתניה</div>
+          <div class="fact-card" data-delay="750">⭐ גיבור: דני אבדיה</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:1rem;opacity:.5;margin-top:8px;">לחץ על הכרטיסיות לגילוי!</div>
+  </div>
+</div>
+
+<!-- ── SLIDE 2: MY DREAM ── -->
+<div class="slide" id="s2">
+  <div class="stars" id="stars2"></div>
+  <div class="slide-content">
+    <div class="pill">💭 החלום שלי</div>
+    <div class="slide-title">כשאגדל אני רוצה להיות...</div>
+    <div id="dream-cover" class="dream-cover" onclick="revealDream()">
+      🤔 לחץ לגילוי! 🤔
+    </div>
+    <div id="dream-reveal" style="display:none;text-align:center;">
+      <div style="font-size:clamp(2rem,7vw,5rem);animation:popIn .5s ease">🏀</div>
+      <div class="slide-title gradient-text" style="font-size:clamp(1.8rem,5vw,3.5rem)">שחקן כדורסל מקצועי!</div>
+      <div class="slide-subtitle">לשחק בליגה הלאומית ובעתיד... ב-NBA! 🌍</div>
+      <div id="dream-custom-cards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 3: DAY IN MY LIFE ── -->
+<div class="slide" id="s3">
+  <div class="slide-content" style="max-width:100%;width:100%;">
+    <div class="pill">📅 יום בחיי</div>
+    <div class="slide-title" style="font-size:clamp(1.5rem,4vw,2.5rem)">יום של שחקן כדורסל 🏀</div>
+    <div class="timeline" id="timeline">
+      <div class="timeline-item" onclick="selectTime(0)">
+        <div class="tl-dot">⏰</div>
+        <div class="tl-time">07:00</div>
+        <div class="tl-label">השכמה</div>
+      </div>
+      <div class="timeline-item" onclick="selectTime(1)">
+        <div class="tl-dot">🎒</div>
+        <div class="tl-time">07:30</div>
+        <div class="tl-label">לבית הספר</div>
+      </div>
+      <div class="timeline-item" onclick="selectTime(2)">
+        <div class="tl-dot">📚</div>
+        <div class="tl-time">08:00</div>
+        <div class="tl-label">לימודים</div>
+      </div>
+      <div class="timeline-item" onclick="selectTime(3)">
+        <div class="tl-dot">🍎</div>
+        <div class="tl-time">13:00</div>
+        <div class="tl-label">הפסקה</div>
+      </div>
+      <div class="timeline-item" onclick="selectTime(4)">
+        <div class="tl-dot">🏠</div>
+        <div class="tl-time">14:00</div>
+        <div class="tl-label">הביתה</div>
+      </div>
+      <div class="timeline-item" onclick="selectTime(5)">
+        <div class="tl-dot">🏀</div>
+        <div class="tl-time">16:00</div>
+        <div class="tl-label">אימון!</div>
+      </div>
+      <div class="timeline-item" onclick="selectTime(6)">
+        <div class="tl-dot">🍽️</div>
+        <div class="tl-time">19:00</div>
+        <div class="tl-label">ערב</div>
+      </div>
+      <div class="timeline-item" onclick="selectTime(7)">
+        <div class="tl-dot">😴</div>
+        <div class="tl-time">22:00</div>
+        <div class="tl-label">לישון</div>
+      </div>
+    </div>
+    <div class="tl-detail" id="tl-detail">
+      👆 לחץ על שעה כדי לראות מה קורה!
+    </div>
+    <a href="animation.html" style="margin-top:14px;background:linear-gradient(90deg,#FF6B35,#F5C518);border:none;border-radius:99px;padding:13px 36px;font-size:clamp(1rem,2.5vw,1.2rem);font-weight:900;font-family:'Heebo',sans-serif;color:#0D1B2A;cursor:pointer;text-decoration:none;display:inline-block;box-shadow:0 6px 24px rgba(255,107,53,.4);transition:all .3s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+      🎬 צפו באנימציה — יום בחיי הראל!
+    </a>
+    <div id="day-custom-cards" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- ── SLIDE 4: ELITZUR NETANYA ── -->
+<div class="slide" id="s4">
+  <div class="slide-content">
+    <div class="pill">🏟️ הקבוצה שלי</div>
+    <div class="slide-title" style="color:var(--gold)">אליצור נתניה 🔵💛</div>
+    <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;justify-content:center;">
+      <div class="team-badge" onclick="playBounceSound()">
+        <span>🏀</span>
+        <span style="font-size:14px;font-weight:900;color:var(--gold);margin-top:4px;">אליצור</span>
+        <span style="font-size:12px;opacity:.8;">נתניה</span>
+      </div>
+      <div style="max-width:340px;">
+        <div style="margin-bottom:12px;font-size:1.1rem;font-weight:700;">
+          🏙️ ממוקמת בנתניה<br>
+          🎽 צבעים: כחול וצהוב<br>
+          🏆 משחקת בליגה הלאומית<br>
+          ⭐ קבוצה עם היסטוריה עשירה!
+        </div>
+        <div style="font-size:1rem;opacity:.8;font-weight:700;margin-bottom:8px;">הסטטיסטיקות שלי באימון:</div>
+        <div id="stats-wrap">
+          <div class="stat-row">
+            <div class="stat-label">🏀 זריקות מדויקות</div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" data-pct="78"></div></div>
+            <div style="min-width:40px;font-size:.9rem;color:var(--gold)">78%</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">💪 מאמץ</div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" data-pct="100"></div></div>
+            <div style="min-width:40px;font-size:.9rem;color:var(--gold)">100%</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">🤝 עבודת צוות</div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" data-pct="92"></div></div>
+            <div style="min-width:40px;font-size:.9rem;color:var(--gold)">92%</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-label">🏃 מהירות</div>
+            <div class="stat-bar-bg"><div class="stat-bar-fill" data-pct="85"></div></div>
+            <div style="min-width:40px;font-size:.9rem;color:var(--gold)">85%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="team-custom-cards" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- ── SLIDE 5: DENI AVDIJA ── -->
+<div class="slide" id="s5">
+  <div class="slide-content">
+    <div class="pill">⭐ הגיבור שלי</div>
+    <div class="slide-title" style="color:var(--gold)">דני אבדיה 🌟</div>
+    <div class="deni-vs">
+      <div class="player-card" onclick="playBounceSound()">
+        <span class="p-emoji">🏀</span>
+        <div class="p-name">דני אבדיה</div>
+        <div class="p-stat">🇮🇱 ישראלי ב-NBA</div>
+        <div class="p-stat">📏 גובה: 2.06 מ'</div>
+        <div class="p-stat">🏆 NBA Draft Pick</div>
+        <div class="p-stat">💪 שחקן כוח-קדימה</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="vs-badge" style="font-size:3rem">🔜</div>
+        <div style="font-size:.9rem;opacity:.7;margin-top:8px;">עתידי</div>
+      </div>
+      <div class="player-card" style="border-color:rgba(245,197,24,.6);">
+        <span class="p-emoji">
+          <img id="photo2" src="harel2.jpg" style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:2px solid var(--gold)" alt="הראל" onerror="this.outerHTML='🌟'">
+        </span>
+        <div class="p-name" style="color:var(--accent)">הראל מגנזי</div>
+        <div class="p-stat">🇮🇱 מנתניה</div>
+        <div class="p-stat">🏫 כיתה ג'</div>
+        <div class="p-stat">🔮 העתיד מבטיח!</div>
+        <div class="p-stat">🏀 אליצור נתניה</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;text-align:center;font-size:clamp(1rem,2.5vw,1.3rem);font-weight:700;max-width:440px;">
+      💬 <em>"אני רוצה להיות כמו דני אבדיה ולהוכיח שילד מישראל יכול לכבוש את העולם!"</em>
+    </div>
+    <div id="hero-custom-cards" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- ── SLIDE 6: QUIZ ── -->
+<div class="slide" id="s6">
+  <div class="slide-content">
+    <div class="pill">🎮 בואו נשחק!</div>
+    <div class="slide-title" style="font-size:clamp(1.5rem,4vw,2.5rem)">חידון כדורסל! 🏀</div>
+    <div id="score-display" class="score-badge">⭐ ניקוד: <span id="score-num">0</span> / <span id="score-total">4</span></div>
+    <div class="quiz-box" id="quiz-box"></div>
+    <div id="quiz-result"></div>
+    <button id="quiz-restart" onclick="initQuiz()" style="display:none" class="admin-btn">🔄 שחק שוב</button>
+    <div id="quiz-custom-cards" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;"></div>
+  </div>
+</div>
+
+<!-- ── SLIDE 7: THANKS ── -->
+<div class="slide" id="s7">
+  <div class="stars" id="stars7"></div>
+  <div class="slide-content">
+    <img id="photo3" src="harel1.jpg" class="hero-photo" alt="הראל" style="width:170px;height:220px" onerror="this.style.display='none'">
+    <div class="slide-title gradient-text">תודה רבה! 🙏</div>
+    <div class="slide-subtitle">תודה שהאזנתם להצגה שלי!</div>
+    <div style="font-size:1.1rem;text-align:center;max-width:420px;line-height:1.7;margin-top:8px;">
+      אני מאמין שאם עובדים קשה ולא מוותרים,<br>
+      <strong style="color:var(--gold)">כל חלום יכול להתגשם! 🌟</strong>
+    </div>
+    <div class="bounce-wrap" style="margin-top:16px;" onclick="launchConfetti()">
+      <div class="bounce-ball">🏀</div>
+      <div class="bounce-shadow"></div>
+    </div>
+    <div style="font-size:.95rem;opacity:.5;margin-top:8px;">לחץ על הכדור לחגיגה!</div>
+    <div id="thanks-custom-cards" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px;"></div>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<!-- ═══════════════════════════════════════════
+     ADMIN OVERLAY
+═══════════════════════════════════════════ -->
+<div id="admin-overlay">
+  <div id="admin-panel">
+    <button class="close-btn" onclick="closeAdmin()">✕</button>
+    <h2>🛠️ לוח ניהול</h2>
+    <p style="text-align:center;opacity:.6;font-size:.85rem;margin-bottom:8px;">ניהול תוכן המצגת</p>
+
+    <!-- LOGIN -->
+    <div id="admin-login" style="display:none">
+      <p style="margin-bottom:12px;font-size:1.1rem;">הזן סיסמא</p>
+      <input type="password" id="admin-pass" placeholder="סיסמא..." onkeydown="if(event.key==='Enter')checkPass()">
+      <br>
+      <button class="admin-btn" onclick="checkPass()">🔓 כניסה</button>
+      <p id="pass-err" style="color:#c0392b;margin-top:8px;font-size:.9rem;"></p>
+    </div>
+
+    <!-- PANEL CONTENT -->
+    <div id="admin-content" style="display:none">
+
+      <!-- Upload Photos -->
+      <div class="admin-section">
+        <h3>📸 תמונות הראל</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div>
+            <label style="font-size:.85rem;opacity:.7;">תמונה 1 (עם כדור)</label>
+            <div class="photo-upload-zone" onclick="document.getElementById('upload1').click()">
+              לחץ להעלאת תמונה 1
+            </div>
+            <input type="file" id="upload1" accept="image/*" style="display:none" onchange="uploadPhoto(this,'photo1','photo-1')">
+          </div>
+          <div>
+            <label style="font-size:.85rem;opacity:.7;">תמונה 2 (ידיים למעלה)</label>
+            <div class="photo-upload-zone" onclick="document.getElementById('upload2').click()">
+              לחץ להעלאת תמונה 2
+            </div>
+            <input type="file" id="upload2" accept="image/*" style="display:none" onchange="uploadPhoto(this,'photo2','photo-2')">
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Custom Card -->
+      <div class="admin-section">
+        <h3>➕ הוסף כרטיסייה לשקופית</h3>
+        <select class="admin-input" id="card-slide">
+          <option value="dream">📖 שקופית החלום</option>
+          <option value="day">📅 יום בחיי</option>
+          <option value="team">🏟️ הקבוצה</option>
+          <option value="hero">⭐ הגיבור</option>
+          <option value="quiz">🎮 חידון</option>
+          <option value="thanks">🙏 תודה</option>
+        </select>
+        <input class="admin-input" id="card-emoji" placeholder="בחר אימוג'י (לדוגמה: 🎉)" maxlength="4">
+        <input class="admin-input" id="card-text" placeholder="טקסט הכרטיסייה...">
+        <button class="admin-btn" onclick="addCustomCard()">➕ הוסף</button>
+
+        <div style="margin-top:12px;">
+          <strong style="font-size:.9rem;opacity:.7;">כרטיסיות קיימות:</strong>
+          <ul class="admin-list" id="cards-list"></ul>
+        </div>
+      </div>
+
+      <!-- Add Quiz Question -->
+      <div class="admin-section">
+        <h3>🎮 הוסף שאלה לחידון</h3>
+        <input class="admin-input" id="q-question" placeholder="השאלה...">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input class="admin-input" id="q-a0" placeholder="תשובה 1">
+          <input class="admin-input" id="q-a1" placeholder="תשובה 2">
+          <input class="admin-input" id="q-a2" placeholder="תשובה 3">
+          <input class="admin-input" id="q-a3" placeholder="תשובה 4">
+        </div>
+        <select class="admin-input" id="q-correct">
+          <option value="0">תשובה 1 נכונה</option>
+          <option value="1">תשובה 2 נכונה</option>
+          <option value="2">תשובה 3 נכונה</option>
+          <option value="3">תשובה 4 נכונה</option>
+        </select>
+        <button class="admin-btn" onclick="addCustomQuestion()">➕ הוסף שאלה</button>
+      </div>
+
+      <!-- Danger zone -->
+      <div class="admin-section" style="border:1px solid rgba(192,57,43,.4)">
+        <h3 style="color:#e74c3c">⚠️ איפוס</h3>
+        <button class="admin-btn danger" onclick="resetAll()">🗑️ מחק את כל השינויים</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+const TOTAL_SLIDES = 8;
+const ADMIN_PASS = 'Harel2025';
+let currentSlide = 0;
+let quizQ = 0, quizScore = 0;
+let adminTriggerCount = 0, adminTriggerTimer = null;
+let dreamRevealed = false;
+let statsAnimated = false;
+let confettiAnimId = null;
+
+// Persistent data
+function getData(){
+  return JSON.parse(localStorage.getItem('harelData')||'{"cards":[],"questions":[],"photos":{}}');
+}
+function saveData(d){ localStorage.setItem('harelData', JSON.stringify(d)); }
+
+// ══════════════════════════════════════
+// BUILT-IN QUIZ QUESTIONS
+// ══════════════════════════════════════
+const builtInQ = [
+  {q:'כמה שחקנים יש בקבוצת כדורסל בתוך המגרש?',
+   a:['4','5','6','7'],correct:1},
+  {q:'כמה נקודות שווה זריקה מעבר לקו השלוש?',
+   a:['1','2','3','4'],correct:2},
+  {q:'באיזו קבוצה שחקן הראל?',
+   a:['מכבי תל אביב','הפועל ירושלים','אליצור נתניה','מכבי חיפה'],correct:2},
+  {q:'מי הוא השחקן שהראל חולם להיות כמוהו?',
+   a:['גל מקל','דני אבדיה','תאיר כהן','שחר פז'],correct:1},
+];
+
+// ══════════════════════════════════════
+// TIMELINE DATA
+// ══════════════════════════════════════
+const tlData = [
+  {emoji:'⏰',text:'07:00 - קמים בבוקר! ארוחת בוקר עם פחמימות ופרוטאין לאנרגיה כל היום 🍳🥛'},
+  {emoji:'🎒',text:'07:30 - יוצאים לבית הספר. שחקן טוב חייב להיות גם תלמיד טוב! 📚'},
+  {emoji:'📚',text:'08:00-13:00 - לומדים חשבון, עברית, אנגלית... ידע זה כוח גם במגרש! 🧠'},
+  {emoji:'🍎',text:'13:00 - הפסקת ארוחה! אוכלים בריא כדי לתת אנרגיה לאימון 🥗'},
+  {emoji:'🏠',text:'14:00 - חזרה הביתה, מנוחה קצרה. הגוף צריך להתאושש לפני אימון 💤'},
+  {emoji:'🏀',text:'16:00-18:30 - אימון קשה עם אליצור נתניה! ריצות, זריקות, משחק קבוצתי 🔥💪'},
+  {emoji:'🍽️',text:'19:00 - ארוחת ערב עם המשפחה. צופים יחד במשחקי כדורסל ב-NBA 📺'},
+  {emoji:'😴',text:'22:00 - לישון מוקדם! הגוף גדל ומתפתח בשינה. מחר - אימון נוסף! 💤🌙'},
+];
+
+// ══════════════════════════════════════
+// STARS BACKGROUND
+// ══════════════════════════════════════
+function createStars(containerId, count=40){
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  for(let i=0;i<count;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    const sz=Math.random()*3+1;
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${Math.random()*3+2}s;animation-delay:${Math.random()*3}s`;
+    c.appendChild(s);
+  }
+}
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function navigate(dir){
+  const next = currentSlide + dir;
+  if(next < 0 || next >= TOTAL_SLIDES) return;
+  goToSlide(next);
+}
+
+function goToSlide(idx){
+  const slides = document.querySelectorAll('.slide');
+  slides[currentSlide].classList.remove('active');
+  slides[currentSlide].classList.add('out');
+  setTimeout(()=> slides[currentSlide].classList.remove('out'), 600);
+  currentSlide = idx;
+  slides[currentSlide].classList.add('active');
+  updateUI();
+  onSlideEnter(idx);
+}
+
+function updateUI(){
+  // Progress bar
+  document.getElementById('progress-bar').style.width = ((currentSlide/(TOTAL_SLIDES-1))*100)+'%';
+  // Dots
+  const counter = document.getElementById('slide-counter');
+  counter.innerHTML = '';
+  for(let i=0;i<TOTAL_SLIDES;i++){
+    const d=document.createElement('div');
+    d.className='dot'+(i===currentSlide?' active':'');
+    d.onclick=()=>goToSlide(i);
+    counter.appendChild(d);
+  }
+  // Nav arrows
+  document.getElementById('btn-prev').style.opacity = currentSlide===0?'0.3':'1';
+  document.getElementById('btn-next').style.opacity = currentSlide===TOTAL_SLIDES-1?'0.3':'1';
+}
+
+// ══════════════════════════════════════
+// SLIDE ENTER HOOKS
+// ══════════════════════════════════════
+function onSlideEnter(idx){
+  if(idx===1) revealFacts();
+  if(idx===4 && !statsAnimated){ animateStats(); statsAnimated=true; }
+  if(idx===6){ initQuiz(); }
+  if(idx===7){ setTimeout(launchConfetti,600); }
+  loadCustomCards(idx);
+}
+
+function revealFacts(){
+  document.querySelectorAll('.fact-card').forEach(c=>{
+    const d=parseInt(c.dataset.delay||0);
+    setTimeout(()=>{ c.classList.add('revealed'); c.onclick=()=>playBounceSound(); },d);
+  });
+}
+
+function animateStats(){
+  document.querySelectorAll('.stat-bar-fill').forEach(b=>{
+    const pct=b.dataset.pct;
+    setTimeout(()=>{ b.style.width=pct+'%'; },300);
+  });
+}
+
+// ══════════════════════════════════════
+// DREAM REVEAL
+// ══════════════════════════════════════
+function revealDream(){
+  if(dreamRevealed) return;
+  dreamRevealed=true;
+  document.getElementById('dream-cover').style.display='none';
+  document.getElementById('dream-reveal').style.display='block';
+  launchConfetti();
+  playSuccessSound();
+}
+
+// ══════════════════════════════════════
+// TIMELINE
+// ══════════════════════════════════════
+let activeTime = -1;
+function selectTime(idx){
+  document.querySelectorAll('.timeline-item').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  const d=document.getElementById('tl-detail');
+  d.style.opacity='0';
+  setTimeout(()=>{
+    d.innerHTML=`<span style="font-size:2rem">${tlData[idx].emoji}</span><br>${tlData[idx].text}`;
+    d.style.opacity='1';
+  },200);
+  d.style.transition='opacity .25s';
+  playBounceSound();
+  activeTime=idx;
+}
+
+// ══════════════════════════════════════
+// QUIZ
+// ══════════════════════════════════════
+function getAllQuestions(){
+  const custom = getData().questions || [];
+  return [...builtInQ, ...custom];
+}
+
+function initQuiz(){
+  quizQ=0; quizScore=0;
+  updateScore();
+  document.getElementById('quiz-result').style.display='none';
+  document.getElementById('quiz-restart').style.display='none';
+  document.getElementById('quiz-box').style.display='block';
+  const all=getAllQuestions();
+  document.getElementById('score-total').textContent=all.length;
+  showQuestion();
+}
+
+function showQuestion(){
+  const all=getAllQuestions();
+  if(quizQ>=all.length){ showQuizResult(); return; }
+  const q=all[quizQ];
+  document.getElementById('quiz-box').innerHTML=`
+    <div class="q-text">שאלה ${quizQ+1}/${all.length}: ${q.q}</div>
+    <div class="q-options">
+      ${q.a.map((a,i)=>`<button class="q-btn" onclick="answerQ(${i})">${a}</button>`).join('')}
+    </div>
+  `;
+}
+
+function answerQ(idx){
+  const all=getAllQuestions();
+  const q=all[quizQ];
+  const btns=document.querySelectorAll('.q-btn');
+  btns.forEach(b=>b.disabled=true);
+  if(idx===q.correct){
+    btns[idx].classList.add('correct');
+    quizScore++;
+    updateScore();
+    playSuccessSound();
+    launchMini();
+  } else {
+    btns[idx].classList.add('wrong');
+    btns[q.correct].classList.add('correct');
+    playWrongSound();
+  }
+  quizQ++;
+  setTimeout(showQuestion, 1400);
+}
+
+function updateScore(){
+  document.getElementById('score-num').textContent=quizScore;
+}
+
+function showQuizResult(){
+  document.getElementById('quiz-box').style.display='none';
+  const all=getAllQuestions();
+  const pct=Math.round((quizScore/all.length)*100);
+  let msg='';
+  if(pct>=80) msg='🏆 מדהים! אתה כוכב אמיתי!';
+  else if(pct>=50) msg='👍 כל הכבוד! תמשיכו לתרגל!';
+  else msg='💪 לא נורא! תשחקו שוב!';
+  const r=document.getElementById('quiz-result');
+  r.innerHTML=`<div>${msg}</div><div style="font-size:1.5rem;margin-top:8px;">ניקוד: ${quizScore}/${all.length} (${pct}%)</div>`;
+  r.style.display='block';
+  document.getElementById('quiz-restart').style.display='inline-block';
+  if(pct>=80) launchConfetti();
+}
+
+// ══════════════════════════════════════
+// CONFETTI
+// ══════════════════════════════════════
+const canvas = document.getElementById('confetti-canvas');
+const ctx2d = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas(){
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function launchConfetti(){
+  particles=[];
+  const colors=['#F5C518','#FF6B35','#00C9FF','#FF4F81','#4FFF91','#fff'];
+  for(let i=0;i<140;i++){
+    particles.push({
+      x:Math.random()*canvas.width,
+      y:-10,
+      vx:(Math.random()-0.5)*6,
+      vy:Math.random()*4+2,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      r:Math.random()*6+3,
+      rot:Math.random()*360,
+      rspeed:(Math.random()-0.5)*8,
+      life:1
+    });
+  }
+  if(confettiAnimId) cancelAnimationFrame(confettiAnimId);
+  animConfetti();
+}
+
+function launchMini(){
+  const colors=['#F5C518','#FF6B35','#fff'];
+  for(let i=0;i<40;i++){
+    particles.push({
+      x:canvas.width/2+(Math.random()-0.5)*200,
+      y:canvas.height/2,
+      vx:(Math.random()-0.5)*8,
+      vy:Math.random()*-8-2,
+      color:colors[Math.floor(Math.random()*colors.length)],
+      r:Math.random()*5+2,
+      rot:Math.random()*360,
+      rspeed:(Math.random()-0.5)*10,
+      life:1
+    });
+  }
+  if(!confettiAnimId) animConfetti();
+}
+
+function animConfetti(){
+  ctx2d.clearRect(0,0,canvas.width,canvas.height);
+  let alive=false;
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.rot+=p.rspeed; p.life-=0.008;
+    if(p.life>0 && p.y<canvas.height+20){
+      alive=true;
+      ctx2d.save();
+      ctx2d.globalAlpha=p.life;
+      ctx2d.translate(p.x,p.y);
+      ctx2d.rotate(p.rot*Math.PI/180);
+      ctx2d.fillStyle=p.color;
+      ctx2d.fillRect(-p.r,-p.r/2,p.r*2,p.r);
+      ctx2d.restore();
+    }
+  });
+  if(alive){ confettiAnimId=requestAnimationFrame(animConfetti); }
+  else{ confettiAnimId=null; ctx2d.clearRect(0,0,canvas.width,canvas.height); }
+}
+
+// ══════════════════════════════════════
+// SOUND (Web Audio API)
+// ══════════════════════════════════════
+let audioCtx=null;
+function getAudio(){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+function playBounceSound(){
+  try{
+    const a=getAudio();
+    const o=a.createOscillator(), g=a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.frequency.setValueAtTime(300,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(80,a.currentTime+0.2);
+    g.gain.setValueAtTime(0.25,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.25);
+    o.start(); o.stop(a.currentTime+0.25);
+  }catch(e){}
+}
+function playSuccessSound(){
+  try{
+    const a=getAudio();
+    [523,659,784].forEach((f,i)=>{
+      const o=a.createOscillator(),g=a.createGain();
+      o.connect(g);g.connect(a.destination);
+      o.frequency.value=f;
+      g.gain.setValueAtTime(0.18,a.currentTime+i*0.12);
+      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+i*0.12+0.25);
+      o.start(a.currentTime+i*0.12);
+      o.stop(a.currentTime+i*0.12+0.3);
+    });
+  }catch(e){}
+}
+function playWrongSound(){
+  try{
+    const a=getAudio();
+    const o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);
+    o.type='sawtooth';o.frequency.value=180;
+    g.gain.setValueAtTime(0.15,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.4);
+    o.start();o.stop(a.currentTime+0.4);
+  }catch(e){}
+}
+
+// ══════════════════════════════════════
+// KEYBOARD NAV
+// ══════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('admin-overlay').classList.contains('open')) return;
+  if(e.key==='ArrowRight'||e.key==='ArrowUp') navigate(-1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowDown') navigate(1);
+  if(e.key===' ') navigate(1);
+});
+
+// Touch swipe
+let touchX=null;
+document.addEventListener('touchstart',e=>touchX=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{
+  if(touchX===null) return;
+  const dx=e.changedTouches[0].clientX-touchX;
+  if(Math.abs(dx)>50){ navigate(dx>0?-1:1); }
+  touchX=null;
+});
+
+// ══════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════
+function adminTrigger(){
+  adminTriggerCount++;
+  clearTimeout(adminTriggerTimer);
+  adminTriggerTimer=setTimeout(()=>adminTriggerCount=0,1500);
+  if(adminTriggerCount>=3) openAdmin();
+}
+
+function openAdmin(){
+  adminTriggerCount=0;
+  const overlay=document.getElementById('admin-overlay');
+  overlay.classList.add('open');
+  const d=getData();
+  if(d.adminAuthed){
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-content').style.display='block';
+    renderCardsList();
+  } else {
+    document.getElementById('admin-login').style.display='block';
+    document.getElementById('admin-content').style.display='none';
+  }
+}
+
+function closeAdmin(){
+  document.getElementById('admin-overlay').classList.remove('open');
+}
+
+function checkPass(){
+  const v=document.getElementById('admin-pass').value;
+  if(v===ADMIN_PASS){
+    const d=getData(); d.adminAuthed=true; saveData(d);
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-content').style.display='block';
+    document.getElementById('admin-pass').value='';
+    renderCardsList();
+  } else {
+    document.getElementById('pass-err').textContent='❌ סיסמא שגויה';
+    document.getElementById('admin-pass').value='';
+  }
+}
+
+function uploadPhoto(input, imgId, key){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const b64=e.target.result;
+    const d=getData(); d.photos=d.photos||{}; d.photos[key]=b64; saveData(d);
+    // Update all matching images
+    document.querySelectorAll('#'+imgId).forEach(img=>{
+      img.src=b64; img.style.display='';
+      img.nextElementSibling && img.nextElementSibling.classList.contains('photo-placeholder') && (img.nextElementSibling.style.display='none');
+    });
+    alert('✅ התמונה עלתה בהצלחה!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function addCustomCard(){
+  const slide=document.getElementById('card-slide').value;
+  const emoji=document.getElementById('card-emoji').value.trim()||'✨';
+  const text=document.getElementById('card-text').value.trim();
+  if(!text){ alert('אנא הזן טקסט'); return; }
+  const d=getData();
+  d.cards=d.cards||[];
+  d.cards.push({slide,emoji,text,id:Date.now()});
+  saveData(d);
+  document.getElementById('card-text').value='';
+  document.getElementById('card-emoji').value='';
+  renderCardsList();
+  renderCustomCardsForSlide(currentSlide);
+  alert('✅ הכרטיסייה נוספה!');
+}
+
+function deleteCard(id){
+  const d=getData();
+  d.cards=d.cards.filter(c=>c.id!==id);
+  saveData(d);
+  renderCardsList();
+  renderCustomCardsForSlide(currentSlide);
+}
+
+function renderCardsList(){
+  const d=getData();
+  const list=document.getElementById('cards-list');
+  if(!list) return;
+  list.innerHTML=(d.cards||[]).map(c=>`
+    <li>
+      <span>${c.emoji} ${c.text.substring(0,40)}${c.text.length>40?'...':''} <small style="opacity:.5">(${c.slide})</small></span>
+      <button class="del-btn" onclick="deleteCard(${c.id})">מחק</button>
+    </li>
+  `).join('')||'<li style="opacity:.5">אין כרטיסיות עדיין</li>';
+}
+
+function addCustomQuestion(){
+  const q=document.getElementById('q-question').value.trim();
+  const a=[
+    document.getElementById('q-a0').value.trim(),
+    document.getElementById('q-a1').value.trim(),
+    document.getElementById('q-a2').value.trim(),
+    document.getElementById('q-a3').value.trim(),
+  ];
+  const correct=parseInt(document.getElementById('q-correct').value);
+  if(!q||a.some(x=>!x)){ alert('אנא מלא את כל השדות'); return; }
+  const d=getData();
+  d.questions=d.questions||[];
+  d.questions.push({q,a,correct,id:Date.now()});
+  saveData(d);
+  ['q-question','q-a0','q-a1','q-a2','q-a3'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ השאלה נוספה!');
+}
+
+function resetAll(){
+  if(!confirm('האם אתה בטוח? כל השינויים יימחקו!')) return;
+  const d=getData(); d.cards=[]; d.questions=[]; saveData(d);
+  renderCardsList();
+  for(let i=0;i<TOTAL_SLIDES;i++) renderCustomCardsForSlide(i);
+  alert('✅ אופס! כל השינויים נמחקו.');
+}
+
+// ══════════════════════════════════════
+// CUSTOM CARDS RENDERER
+// ══════════════════════════════════════
+const slideKeyMap = ['','dream','day','day','team','hero','quiz','thanks'];
+// idx: 0=welcome,1=about,2=dream,3=day,4=team,5=hero,6=quiz,7=thanks
+
+function getSlideKey(idx){
+  const map={2:'dream',3:'day',4:'team',5:'hero',6:'quiz',7:'thanks'};
+  return map[idx]||null;
+}
+const cardContainerMap={
+  'dream':'dream-custom-cards','day':'day-custom-cards',
+  'team':'team-custom-cards','hero':'hero-custom-cards',
+  'quiz':'quiz-custom-cards','thanks':'thanks-custom-cards'
+};
+
+function renderCustomCardsForSlide(idx){
+  const key=getSlideKey(idx);
+  if(!key) return;
+  const containerId=cardContainerMap[key];
+  const container=document.getElementById(containerId);
+  if(!container) return;
+  const d=getData();
+  const cards=(d.cards||[]).filter(c=>c.slide===key);
+  container.innerHTML=cards.map(c=>`
+    <div class="custom-card">${c.emoji} ${c.text}</div>
+  `).join('');
+}
+
+function loadCustomCards(idx){
+  renderCustomCardsForSlide(idx);
+}
+
+// ══════════════════════════════════════
+// PHOTO RESTORE FROM LOCALSTORAGE
+// ══════════════════════════════════════
+function restorePhotos(){
+  const d=getData();
+  const ph=d.photos||{};
+  if(ph['photo-1']){
+    document.querySelectorAll('#photo1,#photo3').forEach(img=>{
+      img.src=ph['photo-1']; img.style.display='';
+      const p=img.nextElementSibling;
+      if(p&&p.classList.contains('photo-placeholder')) p.style.display='none';
+    });
+  }
+  if(ph['photo-2']){
+    const img=document.getElementById('photo2');
+    if(img) img.src=ph['photo-2'];
+  }
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  createStars('stars0');
+  createStars('stars2',30);
+  createStars('stars7',50);
+  updateUI();
+  restorePhotos();
+  onSlideEnter(0);
+});
+</script>
+</body>
+</html>

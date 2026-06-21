@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>יום בחיי הראל 🏀 — אנימציה</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Heebo',sans-serif;direction:rtl;touch-action:none;}
+canvas{display:block;width:100vw;height:100vh;}
+
+/* ── UI OVERLAY ── */
+#ui{position:fixed;inset:0;pointer-events:none;z-index:10;}
+
+/* Chapter badge */
+#chapter-badge{
+  position:absolute;top:16px;right:20px;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);
+  border:2px solid rgba(255,255,255,.3);border-radius:99px;
+  padding:7px 18px;font-size:.95rem;font-weight:700;color:#fff;
+  transition:all .5s;
+}
+
+/* Caption */
+#caption{
+  position:absolute;bottom:70px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.65);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.2);border-radius:16px;
+  padding:12px 24px;font-size:clamp(1rem,2.5vw,1.3rem);font-weight:700;
+  color:#fff;text-align:center;max-width:85vw;
+  transition:opacity .4s;
+}
+
+/* Progress bar */
+#prog-wrap{
+  position:absolute;bottom:55px;left:0;right:0;
+  height:5px;background:rgba(255,255,255,.15);
+}
+#prog-fill{
+  height:100%;background:linear-gradient(90deg,#F5C518,#FF6B35);
+  width:0%;transition:width .1s linear;
+}
+
+/* Scene dots */
+#scene-dots{
+  position:absolute;bottom:30px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;pointer-events:all;
+}
+.sdot{
+  width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.3);
+  cursor:pointer;transition:all .3s;
+}
+.sdot.active{background:#F5C518;transform:scale(1.5);}
+
+/* Controls */
+#controls{
+  position:absolute;bottom:20px;right:20px;
+  display:flex;gap:8px;pointer-events:all;
+}
+.ctrl-btn{
+  background:rgba(0,0,0,.5);border:2px solid rgba(255,255,255,.35);
+  border-radius:99px;width:44px;height:44px;color:#fff;font-size:1.1rem;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .25s;backdrop-filter:blur(4px);
+}
+.ctrl-btn:hover{background:rgba(255,255,255,.2);}
+
+/* Back button */
+#back-btn{
+  position:absolute;top:16px;left:20px;
+  background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.3);
+  border-radius:99px;padding:7px 16px;color:#fff;font-size:.9rem;
+  font-weight:700;cursor:pointer;pointer-events:all;
+  backdrop-filter:blur(8px);transition:all .3s;text-decoration:none;
+  display:flex;align-items:center;gap:6px;
+}
+#back-btn:hover{background:rgba(255,255,255,.2);}
+
+/* Splash overlay */
+#splash{
+  position:fixed;inset:0;z-index:100;
+  background:linear-gradient(135deg,#0D1B2A,#003DA5);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;transition:opacity .8s;
+}
+#splash.hidden{opacity:0;pointer-events:none;}
+#splash .ball{font-size:80px;animation:sb 1s ease-in-out infinite;}
+@keyframes sb{0%,100%{transform:translateY(0);}50%{transform:translateY(-30px);}}
+#splash h1{font-size:clamp(2rem,6vw,4rem);font-weight:900;color:#fff;text-align:center;}
+#splash p{font-size:1.1rem;color:rgba(255,255,255,.7);text-align:center;}
+#play-btn{
+  margin-top:8px;background:linear-gradient(90deg,#F5C518,#FF6B35);
+  border:none;border-radius:99px;padding:16px 52px;
+  font-size:1.4rem;font-weight:900;font-family:'Heebo',sans-serif;
+  color:#0D1B2A;cursor:pointer;transition:all .3s;
+  box-shadow:0 8px 32px rgba(245,197,24,.4);
+}
+#play-btn:hover{transform:scale(1.07);}
+
+/* Stars in splash */
+.splash-star{position:absolute;background:#fff;border-radius:50%;animation:tw var(--d) ease-in-out infinite;}
+@keyframes tw{0%,100%{opacity:.15;}50%{opacity:1;}}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="ball">🏀</div>
+  <h1>יום בחיי הראל מגנזי</h1>
+  <p>שחקן כדורסל — היום ובעתיד 🌟</p>
+  <button id="play-btn" onclick="startAnimation()">▶ הפעל אנימציה</button>
+</div>
+
+<canvas id="c"></canvas>
+
+<!-- UI OVERLAY -->
+<div id="ui">
+  <a href="index.html" id="back-btn">‹ חזרה</a>
+  <div id="chapter-badge">📅 היום</div>
+  <div id="caption">...</div>
+  <div id="prog-wrap"><div id="prog-fill"></div></div>
+  <div id="scene-dots"></div>
+  <div id="controls">
+    <button class="ctrl-btn" onclick="prevScene()" title="הקודם">‹</button>
+    <button class="ctrl-btn" id="pp-btn" onclick="togglePlay()" title="הפסק/המשך">⏸</button>
+    <button class="ctrl-btn" onclick="nextScene()" title="הבא">›</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// CANVAS & GLOBALS
+// ══════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Stars in splash
+(function(){
+  const sp = document.getElementById('splash');
+  for(let i=0;i<60;i++){
+    const s=document.createElement('div');
+    s.className='splash-star';
+    const sz=Math.random()*3+1;
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${Math.random()*3+2}s;animation-delay:${Math.random()*3}s;`;
+    sp.appendChild(s);
+  }
+})();
+
+// ══════════════════════════════════════════════════
+// MATH UTILS
+// ══════════════════════════════════════════════════
+const lerp = (a,b,t) => a+(b-a)*t;
+const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
+const ease = t => t<.5?2*t*t:-1+(4-2*t)*t;
+const easeOut = t => 1-Math.pow(1-t,3);
+const lerpC = (c1,c2,t) => c1.map((v,i)=>Math.round(lerp(v,c2[i],clamp(t,0,1))));
+const rgb = ([r,g,b],a=1) => `rgba(${r},${g},${b},${a})`;
+const PI = Math.PI, TAU = PI*2;
+
+function rr(x,y,w,h,r=6){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);
+  ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);
+  ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+// ══════════════════════════════════════════════════
+// DRAW: BASKETBALL
+// ══════════════════════════════════════════════════
+function drawBall(x,y,r,spin=0){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(spin);
+  // Ball
+  ctx.fillStyle='#E85D04';
+  ctx.beginPath(); ctx.arc(0,0,r,0,TAU); ctx.fill();
+  // Seams
+  ctx.strokeStyle='#1a0a00';
+  ctx.lineWidth=Math.max(1.5,r*0.08);
+  // Horizontal
+  ctx.beginPath(); ctx.moveTo(-r,0); ctx.lineTo(r,0); ctx.stroke();
+  // Left arc
+  ctx.beginPath(); ctx.arc(0,0,r*0.45,-PI*0.4,PI*0.4); ctx.stroke();
+  // Right arc
+  ctx.beginPath(); ctx.arc(0,0,r*0.45,PI-PI*0.4,PI+PI*0.4); ctx.stroke();
+  // Center vertical curve
+  ctx.beginPath(); ctx.arc(0,0,r*0.12,-PI/2,PI/2); ctx.stroke();
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════
+// DRAW: BASKETBALL HOOP
+// ══════════════════════════════════════════════════
+function drawHoop(x,y,sc=1){
+  const s=sc;
+  // Backboard
+  ctx.fillStyle='rgba(220,230,255,0.9)';
+  rr(x-4*s, y-60*s, 8*s, 50*s, 2*s); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.lineWidth=1*s;
+  rr(x-4*s, y-60*s, 8*s, 50*s, 2*s); ctx.stroke();
+  // Pole
+  ctx.fillStyle='#888';
+  rr(x-3*s, y-10*s, 6*s, 10*s+H*0.35, 2*s); ctx.fill();
+  // Arm (horizontal piece connecting pole to rim)
+  ctx.fillStyle='#888';
+  rr(x-26*s, y-16*s, 26*s, 5*s, 2*s); ctx.fill();
+  // Rim
+  ctx.strokeStyle='#e05500';
+  ctx.lineWidth=4*s;
+  ctx.beginPath();
+  ctx.moveTo(x-4*s, y-12*s);
+  ctx.lineTo(x-26*s, y-12*s);
+  ctx.stroke();
+  // The ring (open circle = rim viewed from side)
+  ctx.strokeStyle='#e05500';
+  ctx.lineWidth=5*s;
+  ctx.beginPath();
+  ctx.arc(x-26*s, y-12*s, 3*s, 0, TAU);
+  ctx.stroke();
+  // Net (simple lines)
+  ctx.strokeStyle='rgba(255,255,255,0.7)';
+  ctx.lineWidth=1*s;
+  const netTop = y-12*s, netBot = y+10*s;
+  const netL = x-32*s, netR = x-20*s;
+  for(let i=0;i<=4;i++){
+    const nx = lerp(netL,netR,i/4);
+    ctx.beginPath();
+    ctx.moveTo(nx,netTop);
+    ctx.lineTo(lerp(netL+3*s,netR-3*s,i/4),netBot);
+    ctx.stroke();
+  }
+  for(let i=0;i<=2;i++){
+    const ny = lerp(netTop,netBot,i/2+0.33);
+    ctx.beginPath();
+    ctx.moveTo(netL+(i>0?3*s:0),ny);
+    ctx.lineTo(netR-(i>0?3*s:0),ny);
+    ctx.stroke();
+  }
+}
+
+// ══════════════════════════════════════════════════
+// DRAW: CHARACTER
+// x,y = feet center; sc = scale; pose; t = scene t [0..1]
+// jersey: color string; shorts: color string
+// ══════════════════════════════════════════════════
+const SKIN = '#f2aa6a';
+const HAIR = '#1a0f05';
+
+function drawChar(cx,cy,sc,pose,t,jersey='#003DA5',shorts='#F5C518'){
+  ctx.save();
+  ctx.translate(cx,cy);
+  const s=sc;
+
+  let bdy=0, la=0.22, ra=-0.22, ll=0.1, rl=-0.1, eyeOpen=1;
+
+  switch(pose){
+    case 'sleep':
+      // draw lying on side — handled separately
+      drawSleep(s,jersey,shorts);
+      ctx.restore();
+      return;
+    case 'idle':
+      bdy=Math.sin(t*PI*2)*2*s;
+      la=0.2; ra=-0.2;
+      break;
+    case 'run':{
+      const f=t*PI*8;
+      bdy=-Math.abs(Math.sin(f))*4*s;
+      la=Math.sin(f)*0.6; ra=-Math.sin(f)*0.6;
+      ll=Math.sin(f)*0.5; rl=-Math.sin(f)*0.5;
+      break;}
+    case 'dribble':{
+      const f=t*PI*7;
+      bdy=-Math.abs(Math.sin(f))*3*s;
+      ra=0.4+Math.sin(f)*0.35; la=-0.1;
+      ll=0.05; rl=-0.05;
+      break;}
+    case 'shoot':{
+      const p=ease(clamp(t*2,0,1));
+      ra=-PI*0.75*p; la=-0.15;
+      bdy=-8*p*s;
+      break;}
+    case 'jump_shoot':
+      bdy=-20*s; la=-0.3; ra=-PI*0.65;
+      ll=0.35; rl=-0.35;
+      break;
+    case 'celebrate':
+      la=-PI*0.85+Math.sin(t*PI*4)*0.15;
+      ra= PI*0.85+Math.sin(t*PI*4+1)*0.15;
+      bdy=Math.sin(t*PI*3)*5*s;
+      break;
+    case 'study':
+      la=0.5; ra=-0.1; ll=0.05; rl=-0.05;
+      bdy=-2*s;
+      break;
+    case 'walk':{
+      const f=t*PI*6;
+      bdy=-Math.abs(Math.sin(f))*3*s;
+      la=Math.sin(f)*0.4; ra=-Math.sin(f)*0.4;
+      ll=Math.sin(f)*0.35; rl=-Math.sin(f)*0.35;
+      break;}
+  }
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(0,0,22*s,6*s,0,0,TAU);
+  ctx.fill();
+
+  ctx.translate(0,bdy-5*s);
+
+  // Shoes
+  ctx.fillStyle='#111';
+  rr(-19*s,-14*s,16*s,10*s,4*s); ctx.fill();
+  rr( 3*s,-14*s,16*s,10*s,4*s); ctx.fill();
+  // Shoe accent (white stripe)
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  rr(-18*s,-10*s,14*s,3*s,2*s); ctx.fill();
+  rr( 4*s,-10*s,14*s,3*s,2*s); ctx.fill();
+
+  // Legs (skin colored calves)
+  ctx.save();
+  ctx.translate(-10*s,-26*s); ctx.rotate(ll);
+  ctx.fillStyle=SKIN;
+  rr(-4*s,0,8*s,20*s,3*s); ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(10*s,-26*s); ctx.rotate(rl);
+  ctx.fillStyle=SKIN;
+  rr(-4*s,0,8*s,20*s,3*s); ctx.fill();
+  ctx.restore();
+
+  // Shorts
+  ctx.fillStyle=shorts;
+  rr(-19*s,-48*s,38*s,24*s,6*s); ctx.fill();
+  // Shorts stripe
+  ctx.fillStyle='rgba(255,255,255,0.15)';
+  rr(-17*s,-47*s,34*s,4*s,2*s); ctx.fill();
+
+  // Jersey body
+  ctx.fillStyle=jersey;
+  rr(-16*s,-92*s,32*s,46*s,7*s); ctx.fill();
+
+  // Jersey number
+  ctx.fillStyle='rgba(255,255,255,0.9)';
+  ctx.font=`bold ${18*s}px Heebo,Arial,sans-serif`;
+  ctx.textAlign='center';
+  ctx.fillText('8',0,-62*s);
+
+  // Left arm
+  ctx.save();
+  ctx.translate(-18*s,-82*s); ctx.rotate(la);
+  ctx.fillStyle=jersey;
+  rr(-5*s,0,10*s,32*s,4*s); ctx.fill();
+  ctx.fillStyle=SKIN;
+  ctx.beginPath(); ctx.arc(0,35*s,6.5*s,0,TAU); ctx.fill();
+  ctx.restore();
+
+  // Right arm
+  ctx.save();
+  ctx.translate(18*s,-82*s); ctx.rotate(ra);
+  ctx.fillStyle=jersey;
+  rr(-5*s,0,10*s,32*s,4*s); ctx.fill();
+  ctx.fillStyle=SKIN;
+  ctx.beginPath(); ctx.arc(0,35*s,6.5*s,0,TAU); ctx.fill();
+  ctx.restore();
+
+  // Neck
+  ctx.fillStyle=SKIN;
+  rr(-5*s,-98*s,10*s,10*s,3*s); ctx.fill();
+
+  // Head
+  ctx.fillStyle=SKIN;
+  ctx.beginPath(); ctx.arc(0,-116*s,20*s,0,TAU); ctx.fill();
+
+  // Hair
+  ctx.fillStyle=HAIR;
+  ctx.beginPath();
+  ctx.arc(0,-120*s,20*s,PI*1.05,PI*2-PI*0.05);
+  ctx.lineTo(0,-120*s); ctx.closePath(); ctx.fill();
+  // Hair curl
+  ctx.beginPath();
+  ctx.ellipse(5*s,-136*s,9*s,6*s,-0.4,0,TAU); ctx.fill();
+
+  // Eyes
+  ctx.fillStyle='#1a1a1a';
+  if(eyeOpen>0.1){
+    ctx.beginPath(); ctx.ellipse(-7*s,-117*s,3.5*s,4*s*eyeOpen,0,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(7*s,-117*s,3.5*s,4*s*eyeOpen,0,0,TAU); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(-6*s,-119*s,1.5*s,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(8*s,-119*s,1.5*s,0,TAU); ctx.fill();
+  }
+
+  // Smile
+  ctx.strokeStyle='#5a2a00';
+  ctx.lineWidth=2.5*s; ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.arc(0,-111*s,8*s,0.1,PI-0.1);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawSleep(s,jersey,shorts){
+  // Rotated 90 degrees, lying on back
+  ctx.save();
+  ctx.rotate(-PI/2);
+  ctx.translate(0,-5*s);
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.15)';
+  ctx.beginPath(); ctx.ellipse(0,20*s,45*s,8*s,0,0,TAU); ctx.fill();
+
+  // Legs
+  ctx.fillStyle=SKIN;
+  rr(-45*s,10*s,18*s,8*s,3*s); ctx.fill();
+  rr(-25*s,10*s,18*s,8*s,3*s); ctx.fill();
+
+  // Shoes
+  ctx.fillStyle='#111';
+  rr(-60*s,8*s,17*s,12*s,4*s); ctx.fill();
+
+  // Shorts
+  ctx.fillStyle=shorts;
+  rr(-45*s,-2*s,38*s,16*s,5*s); ctx.fill();
+
+  // Body (jersey)
+  ctx.fillStyle=jersey;
+  rr(-8*s,-2*s,50*s,16*s,6*s); ctx.fill();
+
+  // Arms
+  ctx.fillStyle=jersey;
+  rr(-8*s,-18*s,50*s,9*s,3*s); ctx.fill();
+
+  // Head
+  ctx.fillStyle=SKIN;
+  ctx.beginPath(); ctx.arc(52*s,6*s,18*s,0,TAU); ctx.fill();
+  ctx.fillStyle=HAIR;
+  ctx.beginPath(); ctx.arc(52*s,6*s,18*s,-PI/2-0.5,-PI/2+PI+0.5); ctx.fill();
+
+  // Eyes (closed - sleeping)
+  ctx.strokeStyle='#5a2a00'; ctx.lineWidth=2*s; ctx.lineCap='round';
+  ctx.beginPath(); ctx.arc(48*s,4*s,4*s,0.1,PI-0.1); ctx.stroke();
+  ctx.beginPath(); ctx.arc(56*s,4*s,4*s,0.1,PI-0.1); ctx.stroke();
+
+  // ZZZ
+  ctx.fillStyle='rgba(255,255,255,0.8)';
+  ctx.font=`bold ${12*s}px Arial`;
+  ctx.textAlign='center';
+  ctx.fillText('Z',65*s,-10*s);
+  ctx.font=`bold ${10*s}px Arial`;
+  ctx.fillText('Z',70*s,-20*s);
+  ctx.font=`bold ${8*s}px Arial`;
+  ctx.fillText('Z',74*s,-28*s);
+
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════
+// DRAW: CROWD (silhouettes)
+// ══════════════════════════════════════════════════
+function drawCrowd(y,h,count,colors,alpha=0.8){
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  const spacing = W/count;
+  for(let i=0;i<count;i++){
+    const x=i*spacing+spacing/2+(Math.sin(i*2.7)*spacing*0.3);
+    const ph = h*(0.6+Math.random()*0.4);
+    ctx.fillStyle=colors[i%colors.length];
+    // Body
+    rr(x-8,y-ph+14,16,ph-14,4); ctx.fill();
+    // Head
+    ctx.beginPath(); ctx.arc(x,y-ph,9,0,TAU); ctx.fill();
+    // Arm up (random)
+    if(Math.sin(i*1.3)>0.3){
+      rr(x+8,y-ph-16,5,22,3); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════
+// SCENE RENDERERS
+// Each receives t [0..1] = progress within scene
+// ══════════════════════════════════════════════════
+
+function renderMorning(t){
+  const te=ease(t);
+
+  // Sky (dark blue → warm morning orange)
+  const sky1=lerpC([15,8,45],[255,150,50],t);
+  const sky2=lerpC([30,15,70],[255,210,90],t);
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,rgb(sky1));
+  grad.addColorStop(1,rgb(sky2));
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+
+  // Sun
+  const sunY=lerp(H*0.88,H*0.22,te);
+  const sg=ctx.createRadialGradient(W*0.8,sunY,0,W*0.8,sunY,90);
+  sg.addColorStop(0,'rgba(255,230,50,0.7)');
+  sg.addColorStop(1,'rgba(255,180,0,0)');
+  ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#FFD700';
+  ctx.beginPath(); ctx.arc(W*0.8,sunY,36,0,TAU); ctx.fill();
+
+  // Floor
+  const flY=H*0.68;
+  ctx.fillStyle='#7a5c36';
+  ctx.fillRect(0,flY,W,H-flY);
+  // Rug
+  ctx.fillStyle='#8B1A1A';
+  rr(W*0.08,flY-6,W*0.48,14,5); ctx.fill();
+
+  // Bed frame
+  const bW=W*0.38,bH=H*0.18,bX=W*0.08,bY=flY-bH;
+  ctx.fillStyle='#5C4023'; rr(bX-6,bY-18,bW+12,bH+24,8); ctx.fill();
+  // Mattress
+  ctx.fillStyle='#E8E0D5'; rr(bX,bY,bW,bH,6); ctx.fill();
+  // Blanket
+  ctx.fillStyle='#003DA5'; rr(bX,bY+bH*0.3,bW,bH*0.55,5); ctx.fill();
+  // Gold stripe on blanket
+  ctx.fillStyle='rgba(245,197,24,0.6)';
+  rr(bX,bY+bH*0.3,bW,8,3); ctx.fill();
+  // Pillow
+  ctx.fillStyle='#fff'; rr(bX+10,bY+6,bW*0.38,bH*0.28,6); ctx.fill();
+
+  // Window
+  const wX=W*0.56,wY=H*0.1,wW=W*0.2,wH=H*0.27;
+  // Window light (changes color with dawn)
+  const winC=lerpC([100,80,160],[255,230,150],t*0.9);
+  ctx.fillStyle=rgb(winC);
+  rr(wX,wY,wW,wH,5); ctx.fill();
+  ctx.strokeStyle='#7a5c36'; ctx.lineWidth=8;
+  rr(wX,wY,wW,wH,5); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(wX+wW/2,wY); ctx.lineTo(wX+wW/2,wY+wH);
+  ctx.moveTo(wX,wY+wH/2); ctx.lineTo(wX+wW,wY+wH/2);
+  ctx.stroke();
+
+  // Alarm clock
+  const cX=W*0.62,cY=flY-32;
+  ctx.fillStyle='#c0392b';
+  ctx.beginPath(); ctx.arc(cX,cY,22,0,TAU); ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(cX,cY,18,0,TAU); ctx.fill();
+  ctx.fillStyle='#c0392b';
+  ctx.beginPath(); ctx.arc(cX-15,cY-15,8,0,TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(cX+15,cY-15,8,0,TAU); ctx.fill();
+  ctx.fillStyle='#222';
+  ctx.font='bold 10px Arial'; ctx.textAlign='center';
+  ctx.fillText('7:00',cX,cY+4);
+  ctx.strokeStyle='#222'; ctx.lineWidth=2; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(cX,cY); ctx.lineTo(cX,cY-12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cX,cY); ctx.lineTo(cX+9,cY); ctx.stroke();
+
+  // Character
+  const s=clamp(H/480,0.7,1.4);
+  if(t<0.28){
+    // Sleeping in bed
+    ctx.save();
+    ctx.translate(bX+bW*0.55,bY+bH*0.5);
+    drawChar(0,0,s,'sleep',t);
+    ctx.restore();
+  } else if(t<0.52){
+    // Standing up, stretching
+    const p=ease((t-0.28)/0.24);
+    const cx=lerp(bX+bW*0.55,W*0.38,p);
+    const cy=lerp(bY+bH*0.5,flY,p);
+    drawChar(cx,cy,s,'idle',t);
+  } else {
+    // Walking / celebrating
+    const cx=lerp(W*0.38,W*0.5,(t-0.52)/0.48);
+    drawChar(cx,flY,s,t>0.75?'celebrate':'walk',t);
+  }
+
+  // Text label
+  drawLabel('⏰ 07:00',W*0.5,H*0.06,'#FFD700');
+}
+
+function renderSchool(t){
+  // Classroom background
+  const wallC=lerpC([255,248,220],[240,230,200],t);
+  ctx.fillStyle=rgb(wallC); ctx.fillRect(0,0,W,H);
+
+  // Floor
+  ctx.fillStyle='#c8a96e';
+  ctx.fillRect(0,H*0.72,W,H*0.28);
+  // Floor tiles
+  ctx.strokeStyle='rgba(0,0,0,0.08)'; ctx.lineWidth=1;
+  for(let i=0;i<W;i+=80){
+    ctx.beginPath(); ctx.moveTo(i,H*0.72); ctx.lineTo(i,H); ctx.stroke();
+  }
+
+  // Chalkboard
+  const bW=W*0.52,bH=H*0.38,bX=W*0.24,bY=H*0.06;
+  ctx.fillStyle='#1a1a1a'; rr(bX-6,bY-6,bW+12,bH+12,6); ctx.fill();
+  ctx.fillStyle='#2d5a27'; rr(bX,bY,bW,bH,4); ctx.fill();
+  // Board tray
+  ctx.fillStyle='#5C4023'; rr(bX-6,bY+bH+5,bW+12,10,3); ctx.fill();
+
+  // Chalk drawings on board
+  ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=2; ctx.lineCap='round';
+  // Basketball circle
+  const bX2=bX+bW*0.2, bY2=bY+bH*0.4;
+  ctx.beginPath(); ctx.arc(bX2,bY2,24,0,TAU); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bX2-24,bY2); ctx.lineTo(bX2+24,bY2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(bX2,bY2,10,-PI*0.4,PI*0.4); ctx.stroke();
+  // Arrow
+  ctx.strokeStyle='rgba(245,197,24,0.9)';
+  ctx.beginPath();
+  ctx.moveTo(bX+bW*0.35,bY2);
+  ctx.lineTo(bX+bW*0.5,bY2);
+  ctx.lineTo(bX+bW*0.46,bY2-8);
+  ctx.moveTo(bX+bW*0.5,bY2);
+  ctx.lineTo(bX+bW*0.46,bY2+8);
+  ctx.stroke();
+  // "NBA" text
+  ctx.fillStyle='rgba(245,197,24,0.9)';
+  ctx.font=`bold ${H*0.04}px Arial`; ctx.textAlign='center';
+  ctx.fillText('NBA!',bX+bW*0.72,bY2+8);
+
+  // Hebrew text on board
+  ctx.fillStyle='rgba(255,255,255,0.8)';
+  ctx.font=`bold ${H*0.025}px Heebo,Arial`;
+  ctx.fillText('שחקן כדורסל מקצועי = חלום שלי',bX+bW*0.5,bY+bH*0.8);
+
+  // Desk
+  const dW=W*0.28,dH=H*0.08,dX=W*0.35,dY=H*0.63;
+  ctx.fillStyle='#b8860b'; rr(dX,dY,dW,dH,6); ctx.fill();
+  ctx.fillStyle='#8B6914'; rr(dX+5,dY+dH,10,H*0.1,3); ctx.fill();
+  ctx.fillStyle='#8B6914'; rr(dX+dW-15,dY+dH,10,H*0.1,3); ctx.fill();
+  // Books on desk
+  ctx.fillStyle='#c0392b'; rr(dX+20,dY-20,50,20,3); ctx.fill();
+  ctx.fillStyle='#2980b9'; rr(dX+78,dY-24,42,24,3); ctx.fill();
+  ctx.fillStyle='#27ae60'; rr(dX+126,dY-18,38,18,3); ctx.fill();
+  // Pencil
+  ctx.fillStyle='#FFD700'; rr(dX+175,dY-5,8,45,2); ctx.fill();
+  ctx.fillStyle='#ff6b35';
+  ctx.beginPath(); ctx.moveTo(dX+175,dY-5); ctx.lineTo(dX+183,dY-5); ctx.lineTo(dX+179,dY-15); ctx.closePath(); ctx.fill();
+
+  // Thought bubble (basketball dream)
+  const tbP=ease(clamp((t-0.3)/0.5,0,1));
+  if(tbP>0){
+    ctx.save(); ctx.globalAlpha=tbP;
+    const tbX=W*0.66,tbY=H*0.3;
+    // Bubble
+    ctx.fillStyle='rgba(255,255,255,0.9)';
+    [[-30,-5,6],[- 18,-14,8],[0,-20,10]].forEach(([dx,dy,r])=>{
+      ctx.beginPath(); ctx.arc(tbX+dx,tbY+dy,r,0,TAU); ctx.fill();
+    });
+    ctx.beginPath(); ctx.arc(tbX,tbY-28,30,0,TAU); ctx.fill();
+    // Ball inside
+    drawBall(tbX,tbY-28,18,t*PI*2);
+    // Stars
+    ctx.fillStyle='#FFD700';
+    ctx.font='16px Arial'; ctx.textAlign='center';
+    ctx.fillText('⭐',tbX,tbY-8);
+    ctx.restore();
+  }
+
+  // Character (sitting, studying)
+  const s=clamp(H/480,0.7,1.3);
+  drawChar(W*0.5,H*0.72,s,'study',t);
+
+  drawLabel('📚 08:00 — בית ספר',W*0.5,H*0.06,'#FFD700');
+}
+
+function renderTraining(t){
+  // Court floor (hardwood)
+  const grad=ctx.createLinearGradient(0,H*0.5,0,H);
+  grad.addColorStop(0,'#c8882c');
+  grad.addColorStop(1,'#a06620');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+
+  // Wall/ceiling backdrop
+  const wallGrad=ctx.createLinearGradient(0,0,0,H*0.5);
+  wallGrad.addColorStop(0,'#1a1a3e');
+  wallGrad.addColorStop(1,'#2d2d5e');
+  ctx.fillStyle=wallGrad; ctx.fillRect(0,0,W,H*0.5);
+
+  // Court lines
+  ctx.strokeStyle='rgba(255,255,255,0.85)'; ctx.lineWidth=3;
+  // Center line
+  ctx.beginPath(); ctx.moveTo(W/2,H*0.5); ctx.lineTo(W/2,H); ctx.stroke();
+  // Center circle
+  ctx.beginPath(); ctx.arc(W/2,(H*0.5+H)*0.5,60,0,TAU); ctx.stroke();
+  // Three point line (arc from floor)
+  ctx.beginPath();
+  ctx.arc(W*0.15,H,H*0.42,PI*1.5,PI*0.55); ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(W*0.85,H,H*0.42,PI*0.45,PI*1.5); ctx.stroke();
+
+  // Lights (ceiling spots)
+  for(let i=0;i<4;i++){
+    const lx=W*(0.15+i*0.23);
+    const lg=ctx.createRadialGradient(lx,H*0.05,0,lx,H*0.05,120);
+    lg.addColorStop(0,'rgba(255,240,200,0.25)');
+    lg.addColorStop(1,'rgba(255,200,100,0)');
+    ctx.fillStyle=lg; ctx.fillRect(0,0,W,H*0.5);
+    // Lamp
+    ctx.fillStyle='#ccc'; rr(lx-10,0,20,18,3); ctx.fill();
+    ctx.fillStyle='rgba(255,240,180,0.9)';
+    ctx.beginPath(); ctx.arc(lx,18,12,0,TAU); ctx.fill();
+  }
+
+  // Elitzur Netanya banner
+  const bnW=W*0.22,bnH=H*0.07;
+  ctx.fillStyle='#003DA5'; rr(W*0.76,H*0.05,bnW,bnH,6); ctx.fill();
+  ctx.fillStyle='#F5C518';
+  ctx.font=`bold ${bnH*0.4}px Heebo,Arial`; ctx.textAlign='center';
+  ctx.fillText('אליצור נתניה',W*0.76+bnW/2,H*0.05+bnH*0.65);
+
+  // Hoop (right side)
+  drawHoop(W*0.93,H*0.54,H/500);
+
+  // Bouncing ball
+  const ballX=W*(0.25+t*0.45);
+  const ballBounceT=(t*6)%1;
+  const ballY=lerp(H*0.82,H*0.62,Math.abs(Math.sin(ballBounceT*PI)));
+  drawBall(ballX,ballY,18,t*PI*4);
+
+  // Character
+  const s=clamp(H/480,0.7,1.3);
+  const pose=t<0.45?'run':(t<0.7?'dribble':'shoot');
+  const charX=lerp(W*0.18,W*0.65,ease(t));
+  drawChar(charX,H*0.88,s,pose,t,'#003DA5','#F5C518');
+
+  // Sweat drops when running
+  if(t>0.3){
+    ctx.fillStyle='rgba(100,180,255,0.7)';
+    ctx.beginPath(); ctx.arc(charX-30,H*0.82,4,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(charX-24,H*0.79,3,0,TAU); ctx.fill();
+  }
+
+  drawLabel('🏀 16:00 — אימון | אליצור נתניה',W*0.5,H*0.04,'#F5C518');
+}
+
+function renderGame(t){
+  // Dark arena bg
+  ctx.fillStyle='#0a0a1a'; ctx.fillRect(0,0,W,H);
+
+  // Spotlight beams from ceiling
+  for(let i=0;i<5;i++){
+    const bx=W*(0.1+i*0.2);
+    const bg=ctx.createConicalGradient?
+      null :
+      ctx.createRadialGradient(bx,0,0,bx,H*0.8,W*0.18);
+    // Fallback triangle
+    ctx.save();
+    ctx.globalAlpha=0.12+Math.sin(t*PI*2+i)*0.04;
+    ctx.fillStyle='rgba(255,240,180,1)';
+    ctx.beginPath();
+    ctx.moveTo(bx,0);
+    ctx.lineTo(bx-80,H*0.7);
+    ctx.lineTo(bx+80,H*0.7);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // Court floor (bright lit area)
+  const courtGrad=ctx.createLinearGradient(0,H*0.55,0,H);
+  courtGrad.addColorStop(0,'#d4902a');
+  courtGrad.addColorStop(1,'#a06820');
+  ctx.fillStyle=courtGrad; ctx.fillRect(0,H*0.55,W,H*0.45);
+
+  // Court lines
+  ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(W/2,H*0.55); ctx.lineTo(W/2,H); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W/2,(H*0.55+H)*0.5,55,0,TAU); ctx.stroke();
+
+  // Crowd (both sides)
+  const crowdColors=['#003DA5','#F5C518','#003DA5','#0055cc','#F5C518','#fff'];
+  drawCrowd(H*0.5,H*0.4,22,crowdColors,0.9);
+
+  // Cheering wave
+  const waveAmt=Math.sin(t*PI*6)*5;
+
+  // Hoop
+  drawHoop(W*0.92,H*0.62,H/480);
+
+  // Scoreboard
+  const sbW=W*0.3,sbH=H*0.1;
+  ctx.fillStyle='#111'; rr(W*0.35,H*0.02,sbW,sbH,8); ctx.fill();
+  ctx.fillStyle='#FFD700';
+  ctx.font=`bold ${sbH*0.35}px Arial`; ctx.textAlign='center';
+  ctx.fillText('אליצור נתניה',W*0.5,H*0.02+sbH*0.4);
+  ctx.fillStyle='#ff6b35';
+  ctx.font=`bold ${sbH*0.45}px Arial`;
+  const score=Math.floor(lerp(18,24,t));
+  ctx.fillText(`${score} - 20`,W*0.5,H*0.02+sbH*0.8);
+
+  // Character (Elitzur jersey — blue/yellow)
+  const s=clamp(H/480,0.7,1.3);
+  const p1=ease(clamp(t*2,0,1));
+  const p2=ease(clamp((t-0.5)*2,0,1));
+  const charX=lerp(W*0.2,W*0.68,p1);
+  const pose=t<0.5?'run':(t<0.75?'jump_shoot':'celebrate');
+  drawChar(charX,H*0.88,s,pose,t,'#003DA5','#F5C518');
+
+  // Ball arc (shooting in second half)
+  if(t>0.55 && t<0.82){
+    const at=(t-0.55)/0.27;
+    const bx=lerp(charX,W*0.86,at);
+    const by=lerp(H*0.72,H*0.6,at)-Math.sin(at*PI)*80;
+    drawBall(bx,by,16,t*PI*5);
+  }
+
+  // GOOOAL text
+  if(t>0.82){
+    const alpha=ease((t-0.82)/0.18);
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle='#FFD700';
+    ctx.font=`bold ${H*0.1}px Heebo,Arial`;
+    ctx.textAlign='center';
+    // Glow
+    ctx.shadowColor='#FFD700'; ctx.shadowBlur=30;
+    ctx.fillText('🏀 נכנס!',W*0.5,H*0.4);
+    ctx.restore();
+  }
+
+  drawLabel('🏆 19:00 — משחק! | אליצור נתניה',W*0.5,H*0.03,'#F5C518');
+}
+
+function renderNBA(t){
+  // Huge arena — dark with bright floor
+  ctx.fillStyle='#050510'; ctx.fillRect(0,0,W,H);
+
+  // Massive crowd silhouettes - stadium tiers
+  const crowdC1=['#1a1a8a','#3333cc','#8888dd','#555599','#0000aa'];
+  const crowdC2=['#8a0000','#cc3333','#dd8888','#995555','#aa0000'];
+
+  drawCrowd(H*0.22,H*0.18,30,crowdC1,0.7);
+  drawCrowd(H*0.38,H*0.14,26,crowdC2,0.75);
+  drawCrowd(H*0.5,H*0.11,22,crowdC1,0.85);
+
+  // Giant spotlights
+  for(let i=0;i<8;i++){
+    const bx=W*(0.06+i*0.125);
+    const pulse=0.1+Math.sin(t*PI*3+i*0.8)*0.05;
+    ctx.save(); ctx.globalAlpha=pulse;
+    ctx.fillStyle='rgba(200,220,255,1)';
+    ctx.beginPath();
+    ctx.moveTo(bx,0);
+    ctx.lineTo(bx-60,H*0.5);
+    ctx.lineTo(bx+60,H*0.5);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // Court
+  const courtGrad=ctx.createLinearGradient(0,H*0.5,0,H);
+  courtGrad.addColorStop(0,'#e09030');
+  courtGrad.addColorStop(1,'#b06820');
+  ctx.fillStyle=courtGrad; ctx.fillRect(0,H*0.5,W,H*0.5);
+  ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(W/2,H*0.5); ctx.lineTo(W/2,H); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W/2,(H*0.5+H)*0.5,65,0,TAU); ctx.stroke();
+
+  // NBA logo banner
+  const bP=ease(clamp(t*2,0,1));
+  ctx.save(); ctx.globalAlpha=bP;
+  // Big NBA text with glow
+  ctx.shadowColor='#cc0000'; ctx.shadowBlur=40;
+  ctx.fillStyle='#cc0000';
+  ctx.font=`bold ${H*0.09}px Arial`; ctx.textAlign='center';
+  ctx.fillText('NBA',W*0.5,H*0.12);
+  ctx.shadowColor='rgba(0,0,0,0)'; ctx.shadowBlur=0;
+  // Subtitle
+  ctx.fillStyle='#fff';
+  ctx.font=`bold ${H*0.035}px Heebo,Arial`;
+  ctx.fillText('הראל מגנזי — שחקן כדורסל',W*0.5,H*0.18);
+  ctx.restore();
+
+  // Hoops both sides
+  drawHoop(W*0.92,H*0.58,H/480);
+
+  // Stars / flash
+  if(t>0.3){
+    ctx.save();
+    for(let i=0;i<6;i++){
+      const st=ease((t-0.3)/0.7);
+      const sx=W*(0.1+i*0.16),sy=H*(0.55+Math.sin(i*1.3)*0.08);
+      ctx.fillStyle=`rgba(255,220,50,${0.3+Math.sin(t*PI*4+i)*0.3})`;
+      ctx.font='20px Arial'; ctx.textAlign='center';
+      ctx.fillText('⭐',sx,sy);
+    }
+    ctx.restore();
+  }
+
+  // Character in NBA white jersey
+  const s=clamp(H/480,0.7,1.3);
+  const charX=lerp(W*0.15,W*0.6,ease(t));
+  const pose=t<0.5?'run':(t<0.75?'jump_shoot':'celebrate');
+  drawChar(charX,H*0.88,s,pose,t,'#fff','#002b5c');
+
+  // Ball
+  const ballBT=(t*5)%1;
+  const ballY=lerp(H*0.82,H*0.65,Math.abs(Math.sin(ballBT*PI)));
+  drawBall(lerp(W*0.15,W*0.6,ease(t))+20,ballY,20,t*PI*6);
+
+  drawLabel('🌍 עתיד — הראל מגנזי ב-NBA!',W*0.5,H*0.03,'#ff6b35');
+}
+
+function renderVictory(t){
+  // Gold explosion background
+  const goldC=lerpC([10,5,30],[200,150,10],ease(t));
+  ctx.fillStyle=rgb(goldC); ctx.fillRect(0,0,W,H);
+
+  // Radial gold burst
+  const rg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.7);
+  rg.addColorStop(0,'rgba(255,230,0,0.5)');
+  rg.addColorStop(1,'rgba(200,100,0,0)');
+  ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
+
+  // Stars everywhere
+  for(let i=0;i<20;i++){
+    const sx=W*(0.05+((i*137.5)%100)/100);
+    const sy=H*(0.05+((i*53.7)%90)/100);
+    const pulse=0.5+Math.sin(t*PI*4+i)*0.5;
+    ctx.fillStyle=`rgba(255,240,50,${pulse*0.9})`;
+    ctx.font=`${20+Math.sin(i+t*3)*6}px Arial`;
+    ctx.textAlign='center';
+    ctx.fillText(['⭐','🏀','🏆','✨'][i%4],sx,sy);
+  }
+
+  // Trophy
+  const trX=W*0.75, trY=H*0.35;
+  const trS=ease(clamp(t*2,0,1));
+  ctx.save();
+  ctx.translate(trX,trY);
+  ctx.scale(trS,trS);
+  ctx.rotate(Math.sin(t*PI*2)*0.06);
+  // Cup
+  ctx.fillStyle='#FFD700';
+  ctx.shadowColor='rgba(255,200,0,0.8)'; ctx.shadowBlur=30;
+  rr(-30,-60,60,70,8); ctx.fill();
+  // Handles
+  rr(-48,-45,20,30,10); ctx.fill();
+  rr(28,-45,20,30,10); ctx.fill();
+  // Base
+  rr(-20,10,40,12,4); ctx.fill();
+  rr(-30,22,60,10,3); ctx.fill();
+  // Star on trophy
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#FF6B35';
+  ctx.font='bold 28px Arial'; ctx.textAlign='center';
+  ctx.fillText('🏆',0,-30);
+  ctx.restore();
+
+  // Main character celebrating
+  const s=clamp(H/480,0.7,1.4);
+  drawChar(W*0.35,H*0.88,s,'celebrate',t,'#003DA5','#F5C518');
+
+  // Big celebrate text
+  const p=ease(clamp((t-0.2)/0.5,0,1));
+  ctx.save();
+  ctx.globalAlpha=p;
+  ctx.shadowColor='rgba(255,200,0,0.9)'; ctx.shadowBlur=40;
+  ctx.fillStyle='#fff';
+  ctx.font=`bold ${H*0.09}px Heebo,Arial`;
+  ctx.textAlign='center';
+  ctx.fillText('החלום מתגשם!',W*0.5,H*0.18);
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#FFD700';
+  ctx.font=`bold ${H*0.05}px Heebo,Arial`;
+  ctx.fillText('"כל חלום שווה להילחם עליו!"',W*0.5,H*0.27);
+  ctx.restore();
+
+  // Confetti particles (precomputed from seed)
+  const confC=['#FFD700','#FF6B35','#00C9FF','#FF4F81','#4FFF91','#fff'];
+  for(let i=0;i<60;i++){
+    const seed=i*137.5;
+    const cx2=((seed*7)%W);
+    const cy2=((seed*3+t*H*2*(0.5+((seed*2)%100)/200))%H);
+    ctx.save();
+    ctx.translate(cx2,cy2);
+    ctx.rotate(seed+t*5);
+    ctx.fillStyle=confC[i%confC.length];
+    ctx.globalAlpha=0.85;
+    rr(-5,-3,10,6,2); ctx.fill();
+    ctx.restore();
+  }
+
+  drawLabel('🏆 אלוף! החלום של הראל מתגשם',W*0.5,H*0.04,'#FFD700');
+}
+
+// helper: label at top
+function drawLabel(text,x,y,color){
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.45)';
+  ctx.font=`bold ${clamp(H*0.03,14,26)}px Heebo,Arial`;
+  ctx.textAlign='center';
+  const tw=ctx.measureText(text).width;
+  rr(x-tw/2-14,y-24,tw+28,32,10); ctx.fill();
+  ctx.fillStyle=color;
+  ctx.fillText(text,x,y);
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════
+// SCENES CONFIG
+// ══════════════════════════════════════════════════
+const SCENES=[
+  {dur:7,render:renderMorning,
+   chapter:'📅 היום — הראל בן 9',
+   caption:'⏰ 07:00 — השכמה! ארוחת בוקר בריאה ומתכוננים ליום מלא'},
+  {dur:7,render:renderSchool,
+   chapter:'📚 היום — בית הספר',
+   caption:'📚 08:00 — לומדים! שחקן טוב חייב גם להיות תלמיד טוב 🧠'},
+  {dur:8,render:renderTraining,
+   chapter:'🏀 היום — אימון',
+   caption:'🏀 16:00 — אימון קשה עם אליצור נתניה! זה המקום שבו חלומות נבנים 💪'},
+  {dur:8,render:renderGame,
+   chapter:'🏟️ היום — משחק',
+   caption:'🏆 19:00 — משחק! הראל מניח הכל על המגרש עם אליצור נתניה'},
+  {dur:8,render:renderNBA,
+   chapter:'🌟 העתיד — NBA',
+   caption:'🌍 העתיד: הראל מגנזי משחק ב-NBA! כמו גיבורו דני אבדיה'},
+  {dur:7,render:renderVictory,
+   chapter:'🏆 העתיד — אלוף!',
+   caption:'🏆 "לא ויתרתי על החלום — ואתם לא תוותרו!" — הראל מגנזי'},
+];
+
+// ══════════════════════════════════════════════════
+// ANIMATION LOOP
+// ══════════════════════════════════════════════════
+let cur=0, scT=0, playing=false, last=0;
+
+function buildDots(){
+  const wrap=document.getElementById('scene-dots');
+  wrap.innerHTML='';
+  SCENES.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='sdot'+(i===cur?' active':'');
+    d.onclick=()=>{cur=i;scT=0;updateUI();};
+    wrap.appendChild(d);
+  });
+}
+
+function updateUI(){
+  const sc=SCENES[cur];
+  document.getElementById('chapter-badge').textContent=sc.chapter;
+  document.getElementById('caption').textContent=sc.caption;
+  document.querySelectorAll('.sdot').forEach((d,i)=>d.classList.toggle('active',i===cur));
+  document.getElementById('pp-btn').textContent=playing?'⏸':'▶';
+}
+
+function nextScene(){scT=0;cur=(cur+1)%SCENES.length;updateUI();}
+function prevScene(){scT=0;cur=(cur-1+SCENES.length)%SCENES.length;updateUI();}
+function togglePlay(){playing=!playing;document.getElementById('pp-btn').textContent=playing?'⏸':'▶';}
+
+function loop(ts){
+  requestAnimationFrame(loop);
+  const dt=Math.min((ts-last)/1000,0.05);
+  last=ts;
+  if(!playing) return;
+  scT+=dt;
+  const sc=SCENES[cur];
+  if(scT>=sc.dur){scT=0;cur=(cur+1)%SCENES.length;updateUI();}
+  const t=clamp(scT/sc.dur,0,1);
+  sc.render(t);
+  document.getElementById('prog-fill').style.width=(t*100)+'%';
+}
+
+function startAnimation(){
+  document.getElementById('splash').classList.add('hidden');
+  playing=true;
+  buildDots();
+  updateUI();
+  requestAnimationFrame(ts=>{last=ts;requestAnimationFrame(loop);});
+}
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') prevScene();
+  if(e.key==='ArrowLeft') nextScene();
+  if(e.key===' '){e.preventDefault();togglePlay();}
+});
+// Touch swipe
+let tx=null;
+document.addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+document.addEventListener('touchend',e=>{
+  if(tx===null)return;
+  const dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>50){dx>0?prevScene():nextScene();}
+  tx=null;
+});
+</script>
+</body>
+</html>
